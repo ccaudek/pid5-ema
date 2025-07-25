@@ -1,0 +1,449 @@
+---
+title: "Static PID-5 and EMA Self-Compassion"
+author: "Corrado Caudek"
+format:
+  pdf:
+    documentclass: article
+    classoption: onecolumn
+    papersize: a4
+    geometry:
+      - top=1in
+      - left=1in
+      - right=1in
+      - bottom=1in
+    fontsize: 11pt
+    linestretch: 1.5
+    colorlinks: true
+    lot: false
+    lof: false
+    highlight-style: github # Già ottimo per la compattazione
+    include-in-header: header.tex
+    keep-tex: true
+editor: source
+---
+
+
+```{r}
+#| echo: false
+#| output: false
+#| 
+# Load necessary libraries
+library(tidyverse)
+library(here)
+library(rio)
+library(brms)
+library(stringr)
+library(purrr)
+library(cmdstanr)
+options(mc.cores = parallel::detectCores())
+library(loo)
+library(ppcor)
+library(tidyr)
+library(broom)
+library(tibble)
+library(mice)
+```
+
+
+```{r}
+# Read and process 'esi_bf' data
+esi_bf <- rio::import(
+  here::here(
+    "data",
+    "processed",
+    "esi_bf.csv"
+  )
+) |>
+  dplyr::distinct(user_id, .keep_all = TRUE) |> # Keep only distinct user_id
+  dplyr::select(user_id, esi_bf) # Select relevant columns
+
+# Read and process 'pid5' data
+pid5 <- rio::import(
+  here::here(
+    "data",
+    "processed",
+    "pid5.csv"
+  )
+) |>
+  dplyr::distinct(user_id, .keep_all = TRUE) |>  # Keep only distinct user_id
+  dplyr::select(user_id, starts_with("domain_")) # Select domain variables
+
+# Merge 'esi_bf' and 'pid5' data by user_id
+df <- left_join(esi_bf, pid5, by = "user_id")
+```
+
+```{r}
+# Define list of user IDs with careless responding
+user_id_with_careless_responding <- c(
+  "ma_se_2005_11_14_490",
+  "reve20041021036",
+  "di_ma_2005_10_20_756",
+  "pa_sc_2005_09_10_468",
+  "il_re_2006_01_18_645",
+  "so_ma_2003_10_13_804",
+  "lo_ca_2005_05_07_05_437",
+  "va_ma_2005_05_31_567",
+  "no_un_2005_06_29_880",
+  "an_bo_1988_08_24_166",
+  "st_ma_2004_04_21_426",
+  "an_st_2005_10_16_052",
+  "vi_de_2002_12_30_067",
+  "gi_ru_2005_03_08_033",
+  "al_mi_2005_03_05_844",
+  "la_ma_2006_01_31_787",
+  "gi_lo_2004_06_27_237",
+  "ch_bi_2001_01_28_407",
+  "al_pe_2001_04_20_079",
+  "le_de_2003_09_05_067",
+  "fe_gr_2002_02_19_434",
+  "ma_ba_2002_09_09_052",
+  "ca_gi_2003_09_16_737",
+  "an_to_2003_08_06_114",
+  "al_se_2003_07_28_277",
+  "ja_tr_2002_10_06_487",
+  "el_ci_2002_02_15_057",
+  "se_ti_2000_03_04_975",
+  "co_ga_2003_10_29_614",
+  "al_ba_2003_18_07_905",
+  "bi_ro_2003_09_07_934",
+  "an_va_2004_04_08_527",
+  "ev_cr_2003_01_27_573"
+)
+
+# Filter out users with careless responses
+df1 <- df[!(df$user_id %in% user_id_with_careless_responding), ]
+```
+
+
+```{r}
+# Read EMA data and rename 'subj_code' to 'user_id'
+ema_raw <- readRDS(
+  here::here(
+    "data",
+    "raw",
+    "ema",
+    "ema_data_scoring.RDS"
+  )
+) |>
+  dplyr::rename(
+    user_id = subj_code
+  )
+
+# Merge EMA data with filtered main data
+df2 <- left_join(df1, ema_raw, by = "user_id")
+
+# Verify number of unique users
+length(unique(df2$user_id))
+```
+
+## Compliance 
+
+Escludiamo i soggetti che hanno risposto a meno di 10 notifiche.
+
+```{r}
+# Conta quante risposte EMA ha fornito ciascun soggetto
+user_counts <- df2 %>%
+  group_by(user_id) %>%
+  summarise(n_responses = n()) %>%
+  ungroup()
+
+# Tieni solo i soggetti con almeno 10 risposte
+valid_users <- user_counts %>%
+  filter(n_responses >= 10) %>%
+  pull(user_id)
+
+# Filtra il dataframe originale
+df2 <- df2 %>%
+  dplyr::filter(user_id %in% valid_users)
+```
+
+
+```{r}
+length(unique(df2$user_id))
+```
+
+## Generate negative instant mood
+
+
+```{r}
+# Costruisce una misura media dell'affetto negativo momentaneo
+
+# Seleziona solo le colonne rilevanti (per velocità)
+items <- c("sad", "angry", "happy", "satisfied")
+
+# Imputa i missing (1 solo imputazione, dato che i NA sono pochi)
+imputed <- mice(df2[, items], m = 1, maxit = 10, seed = 123)
+
+# Estrai il dataset imputato e sostituisci le colonne originali
+df2_imputed <- complete(imputed)
+df2[, items] <- df2_imputed[, items]
+
+df2 <- df2 %>%
+  mutate(
+    happy_reversed = 100 - happy, # Scala 0-100
+    satisfied_reversed = 100 - satisfied,
+    neg_aff_ema = rowMeans(
+      cbind(sad, angry, happy_reversed, satisfied_reversed),
+      na.rm = TRUE
+    )
+  )
+```
+
+
+## Self-compassion negativa
+
+Consideriamo solo le notifiche dove Self-Compassion è stata misurata.
+
+
+```{r}
+df_self_comp_ema <- df2 %>%
+  dplyr::filter(!is.na(ucs_neg) & !is.na(cs_pos))
+
+length(unique(df_self_comp_ema$user_id))
+```
+
+```{r}
+dim(df_self_comp_ema)
+```
+
+```{r}
+df_self_comp_ema_scaled <- df_self_comp_ema %>%
+  dplyr::select(
+    ucs_neg,
+    domain_negative_affect,   
+    domain_detachment,
+    domain_antagonism,
+    domain_disinhibition,
+    domain_psychoticism,
+    neg_aff_ema,
+    pid5_negative_affectivity,
+    pid5_detachment,
+    pid5_antagonism,
+    pid5_disinhibition,
+    pid5_psychoticism,
+    user_id # Mantiene user_id così com'è
+  ) %>%
+  dplyr::mutate(
+    # Applica la standardizzazione (scale) a tutte le colonne selezionate
+    # tranne user_id. as.vector() è usato per assicurare che l'output sia un vettore.
+    dplyr::across(
+      c(
+        ucs_neg,
+        neg_aff_ema,
+        domain_negative_affect,   
+        domain_detachment,
+        domain_antagonism,
+        domain_disinhibition,
+        domain_psychoticism,
+        pid5_negative_affectivity,
+        pid5_detachment,
+        pid5_antagonism,
+        pid5_disinhibition,
+        pid5_psychoticism
+      ),
+      ~ as.vector(scale(.))
+    )
+  )
+```
+
+
+```{r}
+#| output: false
+model_base <- brm(
+  ucs_neg ~ neg_aff_ema + 
+    domain_negative_affect + domain_detachment +
+    domain_antagonism + domain_disinhibition + domain_psychoticism + 
+    (1 + neg_aff_ema | user_id),
+  data = df_self_comp_ema_scaled,
+  family = skew_normal(),
+  prior = c(
+    prior(normal(0, 1), class = "Intercept"),
+    prior(normal(0, 1), class = "b"),
+    prior(exponential(1), class = "sd"),
+    prior(exponential(1), class = "sigma")
+  ),
+  chains = 4,
+  cores = 4,
+  iter = 2000,
+  seed = 123,
+  backend = "cmdstanr",
+  save_pars = save_pars(all = TRUE)
+)
+```
+
+```{r}
+# Posterior predictive check for the baseline model
+pp_check(model_base)
+```
+
+```{r}
+print(model_base)
+```
+
+
+```{r}
+#| output: false
+# Fit augmented Bayesian model with interaction effects
+model_alt <- brm(
+  ucs_neg ~
+    (neg_aff_ema + domain_negative_affect + domain_detachment + 
+       domain_antagonism + domain_disinhibition + domain_psychoticism) *
+      (pid5_negative_affectivity + pid5_detachment + pid5_antagonism +
+         pid5_disinhibition + pid5_psychoticism) +
+    (1 + neg_aff_ema | user_id),
+  data = df_self_comp_ema_scaled,
+  family = skew_normal(),
+  prior = c(
+    prior(normal(0, 1), class = "Intercept"),
+    prior(normal(0, 1), class = "b"),
+    prior(exponential(1), class = "sd"),
+    prior(exponential(1), class = "sigma")
+  ),
+  chains = 4,
+  cores = 4,
+  iter = 2000,
+  seed = 123,
+  backend = "cmdstanr",
+  save_pars = save_pars(all = TRUE)
+)
+```
+
+```{r}
+pp_check(model_alt)
+```
+
+```{r}
+print(model_alt)
+```
+
+
+```{r}
+loo0 <- loo(model_base, save_psis = TRUE)
+loo1 <- loo(model_alt, save_psis = TRUE)
+loo_compare(loo0, loo1)
+```
+
+### Visualizzare ELPD_diff
+
+Visualizzare dove il modello alternativo (model_alt) migliora la predizione rispetto al modello di base (model_base), a livello di soggetto.
+
+
+```{r}
+# Differenza pointwise tra i due modelli
+elpd_diff <- loo0$pointwise[, "elpd_loo"] - loo1$pointwise[, "elpd_loo"]
+```
+
+
+```{r}
+# Recupera i dati usati nel modello
+model_data <- model_base$data
+
+# Aggiungi la colonna con la differenza di ELPD
+model_data$elpd_diff <- elpd_diff
+```
+
+```{r}
+subject_diffs <- model_data %>%
+  group_by(user_id) %>%
+  summarise(
+    mean_elpd_diff = mean(elpd_diff, na.rm = TRUE),
+    se = sd(elpd_diff, na.rm = TRUE) / sqrt(n())
+  ) %>%
+  arrange(mean_elpd_diff)
+```
+
+
+```{r}
+ggplot(subject_diffs, aes(x = reorder(user_id, mean_elpd_diff), y = mean_elpd_diff)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean_elpd_diff - se, ymax = mean_elpd_diff + se),
+                width = 0.2, alpha = 0.3) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  coord_flip() +
+  labs(title = "ELPD difference by subject",
+       x = "user_id (ordered)",
+       y = "ELPD(model_base) - ELPD(model_alt)") +
+  theme_minimal() +
+  scale_x_discrete(labels = NULL)
+```
+
+Ogni punto rappresenta un soggetto. L'asse y mostra la differenza di ELPD tra i modelli: ELPD_base − ELPD_alt. I valori sotto lo zero indicano che il modello alternativo predice meglio per quel soggetto. Le barre di errore indicano l’incertezza (errore standard) per ciascun soggetto. Nel caso presente, dato il valore complessivo di elpd_diff = -466, ci aspettiamo che la maggior parte dei soggetti abbia valori negativi.
+
+```{r}
+subject_diffs %>%
+  summarise(
+    n = n(),
+    n_better_alt = sum(mean_elpd_diff < 0),
+    proportion = n_better_alt / n,
+    percent = proportion * 100
+  )
+```
+
+Il 74% dei soggetti mostrano una migliore predizione con il modello alternativo rispetto al modello base. La preferenza per model_alt è quindi generalizzata, non guidata da pochi individui.
+
+
+```{r}
+ggplot(subject_diffs, aes(x = mean_elpd_diff)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  labs(
+    title = "Distribuzione delle differenze di ELPD",
+    x = "ELPD(model_base) − ELPD(model_alt)",
+    y = "Numero di soggetti"
+  ) +
+  theme_minimal()
+```
+```{r}
+ggplot(subject_diffs, aes(x = mean_elpd_diff)) +
+  geom_density(fill = "skyblue", alpha = 0.6) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = quantile(subject_diffs$mean_elpd_diff, 0.95), color = "red") +
+  labs(title = "Soggetti per cui il modello peggiora",
+       subtitle = "Valori oltre il 95° percentile evidenziati",
+       x = "mean_elpd_diff", y = "Densità") +
+  theme_minimal()
+```
+
+
+```{r}
+bayes_R2(model_base)
+bayes_R2(model_alt)
+```
+
+
+```{r}
+# K-fold cross-validation (e.g., 10 folds)
+# kfold_base <- kfold(model_base, K = 5, seed = 123)
+# kfold_alt  <- kfold(model_alt,  K = 5, seed = 123)
+# kfold_compare(kfold_base, kfold_alt)
+# Se elpd_diff è negativo per model_base, vuol dire che model_alt predice meglio 
+# anche in validazione k-fold.
+```
+
+
+```{r}
+subject_diffs <- subject_diffs %>%
+  mutate(benefit_score = scale(-mean_elpd_diff)) 
+# valori alti = miglioramento maggiore
+subject_diffs
+```
+
+### Discussione dei risultati: impatto delle misure dinamiche sui modelli predittivi
+
+L'obiettivo principale di questa analisi era valutare se l’integrazione delle **misure dinamiche dei tratti disadattivi di personalità** (ovvero, le valutazioni settimanali del PID-5 tramite EMA) migliorasse la capacità di prevedere l’intensità della **self-compassion negativa** in risposta ad affetti negativi momentanei.
+
+Per testare questa ipotesi, abbiamo confrontato due modelli:
+
+* un **modello base**, in cui la self-compassion negativa (UCS) era spiegata da indicatori EMA dell’affetto negativo e dai tratti PID-5 valutati una sola volta all’inizio dello studio;
+* un **modello alternativo**, in cui gli stessi predittori interagivano con le **misure EMA dei cinque domini PID-5**, raccolte in parallelo ai dati di affetto negativo.
+
+I risultati dell’analisi bayesiana con confronto via ELPD (Expected Log Predictive Density) indicano un chiaro miglioramento nella predizione per il modello che include le **interazioni con i tratti EMA**. In particolare, la differenza complessiva di ELPD tra i modelli è di **ΔELPD = -466**, a favore del modello alternativo. Questo effetto non è guidato da pochi casi estremi: in oltre il **74% dei soggetti**, il modello con i tratti EMA ha fornito predizioni migliori, e la distribuzione soggetto-specifica delle differenze di ELPD è fortemente sbilanciata a favore del modello dinamico.
+
+Anche la **varianza spiegata a posteriori (Bayes R²)** è maggiore nel modello alternativo (R² = 0.52 vs. 0.41), suggerendo che la variabilità intra-individuale nei tratti di personalità è un moderatore cruciale della reattività affettiva momentanea.
+
+Dal punto di vista teorico, questi risultati forniscono supporto all’ipotesi che la relazione tra affetto negativo e self-compassion negativa non sia una funzione stabile e fissa, ma **una funzione modulata dai tratti di personalità così come si esprimono nel momento**. L’uso delle misure EMA del PID-5 cattura queste **fluttuazioni disposizionali contestuali**, che non sono accessibili tramite la sola somministrazione statica del PID-5 a inizio studio.
+
+In linea con un approccio **idionomico**, che mira a comprendere il funzionamento individuale nel suo contesto situato, l’evidenza raccolta suggerisce che **combinare misure di stato (affetto negativo momentaneo) con misure di tratto dinamiche (PID-5 EMA)** permette una modellazione più sensibile delle vulnerabilità psicopatologiche. Questi risultati rafforzano l’idea che le valutazioni EMA non siano semplicemente misure rumorose, ma rappresentino un valore aggiunto per comprendere **quando** e **per chi** si attivano risposte maladattive, come la self-compassion negativa.
+
+
+
