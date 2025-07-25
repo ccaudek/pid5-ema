@@ -466,7 +466,7 @@ Consideriamo solo le notifiche dove Self-Compassion è stata misurata.
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{model\_base }\OtherTok{\textless{}{-}} \FunctionTok{brm}\NormalTok{(}
-\NormalTok{  ucs\_neg }\SpecialCharTok{\textasciitilde{}}\NormalTok{ neg\_aff\_ema }\SpecialCharTok{+} 
+\NormalTok{  ucs\_neg }\SpecialCharTok{\textasciitilde{}} \DecValTok{1} \SpecialCharTok{+}  
 \NormalTok{    domain\_negative\_affect }\SpecialCharTok{+}\NormalTok{ domain\_detachment }\SpecialCharTok{+}
 \NormalTok{    domain\_antagonism }\SpecialCharTok{+}\NormalTok{ domain\_disinhibition }\SpecialCharTok{+}\NormalTok{ domain\_psychoticism }\SpecialCharTok{+} 
 \NormalTok{    (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ neg\_aff\_ema }\SpecialCharTok{|}\NormalTok{ user\_id),}
@@ -510,7 +510,7 @@ Using 10 posterior draws for ppc type 'dens_overlay' by default.
 \begin{verbatim}
  Family: skew_normal 
   Links: mu = identity; sigma = identity; alpha = identity 
-Formula: ucs_neg ~ neg_aff_ema + domain_negative_affect + domain_detachment + domain_antagonism + domain_disinhibition + domain_psychoticism + (1 + neg_aff_ema | user_id) 
+Formula: ucs_neg ~ 1 + domain_negative_affect + domain_detachment + domain_antagonism + domain_disinhibition + domain_psychoticism + (1 + neg_aff_ema | user_id) 
    Data: df_self_comp_ema_scaled (Number of observations: 5757) 
   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
          total post-warmup draws = 4000
@@ -518,36 +518,34 @@ Formula: ucs_neg ~ neg_aff_ema + domain_negative_affect + domain_detachment + do
 Multilevel Hyperparameters:
 ~user_id (Number of levels: 350) 
                            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-sd(Intercept)                  0.52      0.02     0.48     0.56 1.00      675
-sd(neg_aff_ema)                0.21      0.02     0.18     0.24 1.00     1281
-cor(Intercept,neg_aff_ema)     0.15      0.08    -0.01     0.30 1.00      970
+sd(Intercept)                  0.55      0.02     0.50     0.60 1.00      699
+sd(neg_aff_ema)                0.42      0.02     0.38     0.46 1.00     1135
+cor(Intercept,neg_aff_ema)     0.24      0.09     0.06     0.42 1.03      176
                            Tail_ESS
-sd(Intercept)                  1509
-sd(neg_aff_ema)                2646
-cor(Intercept,neg_aff_ema)     1932
+sd(Intercept)                  1109
+sd(neg_aff_ema)                1739
+cor(Intercept,neg_aff_ema)      386
 
 Regression Coefficients:
                        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-Intercept                 -0.02      0.03    -0.08     0.04 1.01      367
-neg_aff_ema                0.36      0.02     0.33     0.39 1.00     1525
-domain_negative_affect     0.32      0.04     0.25     0.39 1.01      426
-domain_detachment          0.05      0.03    -0.01     0.12 1.00      492
-domain_antagonism          0.01      0.03    -0.06     0.07 1.01      383
-domain_disinhibition       0.09      0.04     0.02     0.16 1.01      476
-domain_psychoticism        0.01      0.04    -0.08     0.09 1.01      387
+Intercept                 -0.13      0.05    -0.22    -0.04 1.04      157
+domain_negative_affect     0.32      0.04     0.25     0.40 1.01      318
+domain_detachment          0.06      0.03    -0.01     0.13 1.00      649
+domain_antagonism         -0.00      0.03    -0.07     0.07 1.01      417
+domain_disinhibition       0.09      0.04     0.02     0.17 1.01      503
+domain_psychoticism        0.02      0.04    -0.06     0.10 1.01      595
                        Tail_ESS
-Intercept                   641
-neg_aff_ema                2500
-domain_negative_affect     1075
-domain_detachment          1094
-domain_antagonism           784
-domain_disinhibition        921
-domain_psychoticism         630
+Intercept                   285
+domain_negative_affect      924
+domain_detachment          1150
+domain_antagonism           535
+domain_disinhibition        791
+domain_psychoticism        1100
 
 Further Distributional Parameters:
       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma     0.58      0.01     0.56     0.59 1.00     4834     3022
-alpha     1.28      0.11     1.05     1.50 1.00     3136     3110
+sigma     0.57      0.01     0.56     0.59 1.00     4255     2986
+alpha     1.39      0.11     1.17     1.62 1.00     3270     3077
 
 Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -559,11 +557,13 @@ scale reduction factor on split chains (at convergence, Rhat = 1).
 \CommentTok{\# Fit augmented Bayesian model with interaction effects}
 \NormalTok{model\_alt }\OtherTok{\textless{}{-}} \FunctionTok{brm}\NormalTok{(}
 \NormalTok{  ucs\_neg }\SpecialCharTok{\textasciitilde{}}
-\NormalTok{    (neg\_aff\_ema }\SpecialCharTok{+}\NormalTok{ domain\_negative\_affect }\SpecialCharTok{+}\NormalTok{ domain\_detachment }\SpecialCharTok{+} 
-\NormalTok{       domain\_antagonism }\SpecialCharTok{+}\NormalTok{ domain\_disinhibition }\SpecialCharTok{+}\NormalTok{ domain\_psychoticism) }\SpecialCharTok{*}
-\NormalTok{      (pid5\_negative\_affectivity }\SpecialCharTok{+}\NormalTok{ pid5\_detachment }\SpecialCharTok{+}\NormalTok{ pid5\_antagonism }\SpecialCharTok{+}
-\NormalTok{         pid5\_disinhibition }\SpecialCharTok{+}\NormalTok{ pid5\_psychoticism) }\SpecialCharTok{+}
-\NormalTok{    (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ neg\_aff\_ema }\SpecialCharTok{|}\NormalTok{ user\_id),}
+\NormalTok{    domain\_negative\_affect }\SpecialCharTok{*}\NormalTok{ pid5\_negative\_affectivity }\SpecialCharTok{+} 
+\NormalTok{    domain\_detachment }\SpecialCharTok{*}\NormalTok{ pid5\_detachment }\SpecialCharTok{+}
+\NormalTok{    domain\_antagonism }\SpecialCharTok{*}\NormalTok{ pid5\_antagonism }\SpecialCharTok{+} 
+\NormalTok{    domain\_disinhibition }\SpecialCharTok{*}\NormalTok{ pid5\_disinhibition }\SpecialCharTok{+} 
+\NormalTok{    domain\_psychoticism }\SpecialCharTok{*}\NormalTok{ pid5\_psychoticism }\SpecialCharTok{+}
+\NormalTok{    (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ pid5\_negative\_affectivity }\SpecialCharTok{+}\NormalTok{ pid5\_detachment }\SpecialCharTok{+}\NormalTok{ pid5\_antagonism }\SpecialCharTok{+}
+\NormalTok{       pid5\_disinhibition }\SpecialCharTok{+}\NormalTok{ pid5\_psychoticism }\SpecialCharTok{|}\NormalTok{ user\_id),}
   \AttributeTok{data =}\NormalTok{ df\_self\_comp\_ema\_scaled,}
   \AttributeTok{family =} \FunctionTok{skew\_normal}\NormalTok{(),}
   \AttributeTok{prior =} \FunctionTok{c}\NormalTok{(}
@@ -575,7 +575,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).
   \AttributeTok{chains =} \DecValTok{4}\NormalTok{,}
   \AttributeTok{cores =} \DecValTok{4}\NormalTok{,}
   \AttributeTok{iter =} \DecValTok{2000}\NormalTok{,}
-  \AttributeTok{seed =} \DecValTok{123}\NormalTok{,}
+  \CommentTok{\# seed = 123,}
   \AttributeTok{backend =} \StringTok{"cmdstanr"}\NormalTok{,}
   \AttributeTok{save\_pars =} \FunctionTok{save\_pars}\NormalTok{(}\AttributeTok{all =} \ConstantTok{TRUE}\NormalTok{)}
 \NormalTok{)}
@@ -601,159 +601,145 @@ Using 10 posterior draws for ppc type 'dens_overlay' by default.
 \end{Shaded}
 
 \begin{verbatim}
+Warning: There were 2 divergent transitions after warmup. Increasing
+adapt_delta above 0.8 may help. See
+http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+\end{verbatim}
+
+\begin{verbatim}
  Family: skew_normal 
   Links: mu = identity; sigma = identity; alpha = identity 
-Formula: ucs_neg ~ (neg_aff_ema + domain_negative_affect + domain_detachment + domain_antagonism + domain_disinhibition + domain_psychoticism) * (pid5_negative_affectivity + pid5_detachment + pid5_antagonism + pid5_disinhibition + pid5_psychoticism) + (1 + neg_aff_ema | user_id) 
+Formula: ucs_neg ~ domain_negative_affect * pid5_negative_affectivity + domain_detachment * pid5_detachment + domain_antagonism * pid5_antagonism + domain_disinhibition * pid5_disinhibition + domain_psychoticism * pid5_psychoticism + (1 + pid5_negative_affectivity + pid5_detachment + pid5_antagonism + pid5_disinhibition + pid5_psychoticism | user_id) 
    Data: df_self_comp_ema_scaled (Number of observations: 5757) 
   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
          total post-warmup draws = 4000
 
 Multilevel Hyperparameters:
 ~user_id (Number of levels: 350) 
-                           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-sd(Intercept)                  0.39      0.02     0.35     0.42 1.00      978
-sd(neg_aff_ema)                0.13      0.01     0.10     0.16 1.00     1318
-cor(Intercept,neg_aff_ema)     0.23      0.10     0.04     0.41 1.00     1915
-                           Tail_ESS
-sd(Intercept)                  1602
-sd(neg_aff_ema)                2170
-cor(Intercept,neg_aff_ema)     2860
+                                                  Estimate Est.Error l-95% CI
+sd(Intercept)                                         0.38      0.02     0.35
+sd(pid5_negative_affectivity)                         0.15      0.02     0.12
+sd(pid5_detachment)                                   0.13      0.02     0.08
+sd(pid5_antagonism)                                   0.11      0.02     0.06
+sd(pid5_disinhibition)                                0.14      0.02     0.11
+sd(pid5_psychoticism)                                 0.07      0.03     0.01
+cor(Intercept,pid5_negative_affectivity)              0.18      0.11    -0.04
+cor(Intercept,pid5_detachment)                       -0.09      0.13    -0.34
+cor(pid5_negative_affectivity,pid5_detachment)       -0.08      0.19    -0.43
+cor(Intercept,pid5_antagonism)                       -0.09      0.14    -0.35
+cor(pid5_negative_affectivity,pid5_antagonism)        0.45      0.19     0.04
+cor(pid5_detachment,pid5_antagonism)                 -0.14      0.25    -0.58
+cor(Intercept,pid5_disinhibition)                    -0.06      0.11    -0.26
+cor(pid5_negative_affectivity,pid5_disinhibition)    -0.18      0.16    -0.47
+cor(pid5_detachment,pid5_disinhibition)              -0.28      0.20    -0.63
+cor(pid5_antagonism,pid5_disinhibition)              -0.30      0.20    -0.68
+cor(Intercept,pid5_psychoticism)                     -0.24      0.23    -0.64
+cor(pid5_negative_affectivity,pid5_psychoticism)     -0.32      0.27    -0.76
+cor(pid5_detachment,pid5_psychoticism)               -0.14      0.31    -0.70
+cor(pid5_antagonism,pid5_psychoticism)                0.19      0.29    -0.43
+cor(pid5_disinhibition,pid5_psychoticism)             0.04      0.28    -0.50
+                                                  u-95% CI Rhat Bulk_ESS
+sd(Intercept)                                         0.42 1.00     1393
+sd(pid5_negative_affectivity)                         0.19 1.00     1315
+sd(pid5_detachment)                                   0.17 1.01      686
+sd(pid5_antagonism)                                   0.15 1.00      642
+sd(pid5_disinhibition)                                0.17 1.00     1115
+sd(pid5_psychoticism)                                 0.13 1.01      368
+cor(Intercept,pid5_negative_affectivity)              0.39 1.00     2118
+cor(Intercept,pid5_detachment)                        0.16 1.00     2510
+cor(pid5_negative_affectivity,pid5_detachment)        0.31 1.00     1021
+cor(Intercept,pid5_antagonism)                        0.19 1.00     2454
+cor(pid5_negative_affectivity,pid5_antagonism)        0.79 1.00     1009
+cor(pid5_detachment,pid5_antagonism)                  0.38 1.01      637
+cor(Intercept,pid5_disinhibition)                     0.16 1.00     2726
+cor(pid5_negative_affectivity,pid5_disinhibition)     0.16 1.00      938
+cor(pid5_detachment,pid5_disinhibition)               0.14 1.01      452
+cor(pid5_antagonism,pid5_disinhibition)               0.11 1.01      453
+cor(Intercept,pid5_psychoticism)                      0.29 1.00     2807
+cor(pid5_negative_affectivity,pid5_psychoticism)      0.31 1.00     1545
+cor(pid5_detachment,pid5_psychoticism)                0.51 1.00     1061
+cor(pid5_antagonism,pid5_psychoticism)                0.73 1.00     1313
+cor(pid5_disinhibition,pid5_psychoticism)             0.58 1.00     1839
+                                                  Tail_ESS
+sd(Intercept)                                         2602
+sd(pid5_negative_affectivity)                         2326
+sd(pid5_detachment)                                    763
+sd(pid5_antagonism)                                    838
+sd(pid5_disinhibition)                                2449
+sd(pid5_psychoticism)                                  990
+cor(Intercept,pid5_negative_affectivity)              2690
+cor(Intercept,pid5_detachment)                        2803
+cor(pid5_negative_affectivity,pid5_detachment)        1378
+cor(Intercept,pid5_antagonism)                        2685
+cor(pid5_negative_affectivity,pid5_antagonism)        1768
+cor(pid5_detachment,pid5_antagonism)                  1441
+cor(Intercept,pid5_disinhibition)                     2861
+cor(pid5_negative_affectivity,pid5_disinhibition)     1608
+cor(pid5_detachment,pid5_disinhibition)                742
+cor(pid5_antagonism,pid5_disinhibition)               1132
+cor(Intercept,pid5_psychoticism)                      1836
+cor(pid5_negative_affectivity,pid5_psychoticism)      2095
+cor(pid5_detachment,pid5_psychoticism)                1877
+cor(pid5_antagonism,pid5_psychoticism)                2077
+cor(pid5_disinhibition,pid5_psychoticism)             2895
 
 Regression Coefficients:
                                                  Estimate Est.Error l-95% CI
-Intercept                                           -0.03      0.02    -0.08
-neg_aff_ema                                          0.19      0.01     0.16
-domain_negative_affect                               0.21      0.03     0.15
+Intercept                                           -0.02      0.03    -0.06
+domain_negative_affect                               0.23      0.03     0.17
+pid5_negative_affectivity                            0.34      0.02     0.31
 domain_detachment                                    0.03      0.03    -0.02
-domain_antagonism                                    0.00      0.03    -0.05
-domain_disinhibition                                 0.05      0.03    -0.01
-domain_psychoticism                                 -0.02      0.03    -0.08
-pid5_negative_affectivity                            0.28      0.01     0.26
-pid5_detachment                                      0.13      0.01     0.10
-pid5_antagonism                                     -0.09      0.01    -0.12
-pid5_disinhibition                                   0.15      0.01     0.13
-pid5_psychoticism                                    0.04      0.02     0.01
-neg_aff_ema:pid5_negative_affectivity               -0.00      0.01    -0.02
-neg_aff_ema:pid5_detachment                         -0.02      0.01    -0.04
-neg_aff_ema:pid5_antagonism                         -0.01      0.01    -0.03
-neg_aff_ema:pid5_disinhibition                       0.03      0.01     0.02
-neg_aff_ema:pid5_psychoticism                       -0.01      0.01    -0.04
-domain_negative_affect:pid5_negative_affectivity     0.06      0.01     0.03
-domain_negative_affect:pid5_detachment               0.02      0.01    -0.01
-domain_negative_affect:pid5_antagonism              -0.02      0.01    -0.05
-domain_negative_affect:pid5_disinhibition           -0.03      0.01    -0.06
-domain_negative_affect:pid5_psychoticism            -0.02      0.02    -0.05
-domain_detachment:pid5_negative_affectivity          0.01      0.01    -0.01
-domain_detachment:pid5_detachment                    0.00      0.01    -0.03
-domain_detachment:pid5_antagonism                    0.01      0.01    -0.02
-domain_detachment:pid5_disinhibition                -0.01      0.01    -0.03
-domain_detachment:pid5_psychoticism                 -0.00      0.01    -0.03
-domain_antagonism:pid5_negative_affectivity         -0.00      0.01    -0.03
-domain_antagonism:pid5_detachment                   -0.02      0.01    -0.05
-domain_antagonism:pid5_antagonism                    0.03      0.01     0.01
-domain_antagonism:pid5_disinhibition                -0.02      0.01    -0.04
-domain_antagonism:pid5_psychoticism                 -0.01      0.01    -0.03
-domain_disinhibition:pid5_negative_affectivity      -0.01      0.01    -0.04
-domain_disinhibition:pid5_detachment                 0.00      0.01    -0.03
-domain_disinhibition:pid5_antagonism                -0.02      0.01    -0.05
-domain_disinhibition:pid5_disinhibition              0.02      0.01    -0.01
-domain_disinhibition:pid5_psychoticism              -0.01      0.01    -0.04
-domain_psychoticism:pid5_negative_affectivity        0.01      0.02    -0.02
-domain_psychoticism:pid5_detachment                 -0.01      0.02    -0.04
-domain_psychoticism:pid5_antagonism                 -0.00      0.01    -0.03
-domain_psychoticism:pid5_disinhibition               0.01      0.02    -0.02
-domain_psychoticism:pid5_psychoticism                0.01      0.02    -0.02
+pid5_detachment                                      0.21      0.02     0.18
+domain_antagonism                                    0.02      0.03    -0.03
+pid5_antagonism                                     -0.11      0.02    -0.14
+domain_disinhibition                                 0.03      0.03    -0.03
+pid5_disinhibition                                   0.19      0.01     0.16
+domain_psychoticism                                 -0.04      0.03    -0.11
+pid5_psychoticism                                    0.02      0.02    -0.01
+domain_negative_affect:pid5_negative_affectivity     0.06      0.01     0.04
+domain_detachment:pid5_detachment                   -0.01      0.01    -0.04
+domain_antagonism:pid5_antagonism                    0.01      0.01    -0.01
+domain_disinhibition:pid5_disinhibition             -0.02      0.01    -0.04
+domain_psychoticism:pid5_psychoticism               -0.01      0.01    -0.04
                                                  u-95% CI Rhat Bulk_ESS
-Intercept                                            0.02 1.01      722
-neg_aff_ema                                          0.21 1.00     2825
-domain_negative_affect                               0.27 1.00      640
-domain_detachment                                    0.08 1.01      637
-domain_antagonism                                    0.05 1.02      599
-domain_disinhibition                                 0.10 1.01      684
-domain_psychoticism                                  0.04 1.00      765
-pid5_negative_affectivity                            0.31 1.00     3291
-pid5_detachment                                      0.16 1.00     2747
-pid5_antagonism                                     -0.07 1.00     3048
-pid5_disinhibition                                   0.17 1.00     3360
-pid5_psychoticism                                    0.06 1.00     3028
-neg_aff_ema:pid5_negative_affectivity                0.02 1.00     2959
-neg_aff_ema:pid5_detachment                         -0.00 1.00     4052
-neg_aff_ema:pid5_antagonism                          0.01 1.00     3919
-neg_aff_ema:pid5_disinhibition                       0.05 1.00     4263
-neg_aff_ema:pid5_psychoticism                        0.01 1.00     3163
-domain_negative_affect:pid5_negative_affectivity     0.08 1.00     2659
-domain_negative_affect:pid5_detachment               0.05 1.00     2712
-domain_negative_affect:pid5_antagonism               0.00 1.00     3231
-domain_negative_affect:pid5_disinhibition           -0.01 1.00     3573
-domain_negative_affect:pid5_psychoticism             0.02 1.00     2406
-domain_detachment:pid5_negative_affectivity          0.04 1.00     2468
-domain_detachment:pid5_detachment                    0.03 1.00     2825
-domain_detachment:pid5_antagonism                    0.03 1.00     3485
-domain_detachment:pid5_disinhibition                 0.02 1.00     3260
-domain_detachment:pid5_psychoticism                  0.02 1.00     2815
-domain_antagonism:pid5_negative_affectivity          0.02 1.00     2785
-domain_antagonism:pid5_detachment                    0.00 1.00     2496
-domain_antagonism:pid5_antagonism                    0.06 1.00     2756
-domain_antagonism:pid5_disinhibition                 0.01 1.00     3556
-domain_antagonism:pid5_psychoticism                  0.02 1.00     2712
-domain_disinhibition:pid5_negative_affectivity       0.02 1.00     2792
-domain_disinhibition:pid5_detachment                 0.03 1.00     2828
-domain_disinhibition:pid5_antagonism                -0.00 1.00     3266
-domain_disinhibition:pid5_disinhibition              0.04 1.00     3486
-domain_disinhibition:pid5_psychoticism               0.02 1.00     3082
-domain_psychoticism:pid5_negative_affectivity        0.04 1.00     2214
-domain_psychoticism:pid5_detachment                  0.02 1.00     2664
-domain_psychoticism:pid5_antagonism                  0.02 1.00     2428
-domain_psychoticism:pid5_disinhibition               0.04 1.00     2845
-domain_psychoticism:pid5_psychoticism                0.04 1.00     2246
+Intercept                                            0.03 1.00     1605
+domain_negative_affect                               0.28 1.00     1363
+pid5_negative_affectivity                            0.37 1.00     3982
+domain_detachment                                    0.08 1.00     1917
+pid5_detachment                                      0.24 1.00     3938
+domain_antagonism                                    0.08 1.00     1649
+pid5_antagonism                                     -0.08 1.00     4286
+domain_disinhibition                                 0.09 1.00     1418
+pid5_disinhibition                                   0.22 1.00     4528
+domain_psychoticism                                  0.02 1.00     1291
+pid5_psychoticism                                    0.05 1.00     3686
+domain_negative_affect:pid5_negative_affectivity     0.09 1.00     4054
+domain_detachment:pid5_detachment                    0.01 1.00     3884
+domain_antagonism:pid5_antagonism                    0.04 1.00     3657
+domain_disinhibition:pid5_disinhibition              0.01 1.00     3206
+domain_psychoticism:pid5_psychoticism                0.01 1.00     3959
                                                  Tail_ESS
-Intercept                                            1312
-neg_aff_ema                                          3241
-domain_negative_affect                               1249
-domain_detachment                                    1367
-domain_antagonism                                    1116
-domain_disinhibition                                 1268
-domain_psychoticism                                  1510
-pid5_negative_affectivity                            3625
-pid5_detachment                                      3248
-pid5_antagonism                                      2582
-pid5_disinhibition                                   3169
-pid5_psychoticism                                    3049
-neg_aff_ema:pid5_negative_affectivity                2924
-neg_aff_ema:pid5_detachment                          3159
-neg_aff_ema:pid5_antagonism                          3311
-neg_aff_ema:pid5_disinhibition                       3167
-neg_aff_ema:pid5_psychoticism                        3000
-domain_negative_affect:pid5_negative_affectivity     2427
-domain_negative_affect:pid5_detachment               3237
-domain_negative_affect:pid5_antagonism               3026
-domain_negative_affect:pid5_disinhibition            3109
-domain_negative_affect:pid5_psychoticism             2961
-domain_detachment:pid5_negative_affectivity          2975
-domain_detachment:pid5_detachment                    3483
-domain_detachment:pid5_antagonism                    3088
-domain_detachment:pid5_disinhibition                 2828
-domain_detachment:pid5_psychoticism                  3004
-domain_antagonism:pid5_negative_affectivity          2687
-domain_antagonism:pid5_detachment                    2927
-domain_antagonism:pid5_antagonism                    3124
-domain_antagonism:pid5_disinhibition                 3162
-domain_antagonism:pid5_psychoticism                  3055
-domain_disinhibition:pid5_negative_affectivity       3277
-domain_disinhibition:pid5_detachment                 3223
-domain_disinhibition:pid5_antagonism                 3161
-domain_disinhibition:pid5_disinhibition              3222
-domain_disinhibition:pid5_psychoticism               3184
-domain_psychoticism:pid5_negative_affectivity        2867
-domain_psychoticism:pid5_detachment                  2920
-domain_psychoticism:pid5_antagonism                  2981
-domain_psychoticism:pid5_disinhibition               3168
-domain_psychoticism:pid5_psychoticism                2878
+Intercept                                            2312
+domain_negative_affect                               1717
+pid5_negative_affectivity                            3299
+domain_detachment                                    2205
+pid5_detachment                                      2932
+domain_antagonism                                    2178
+pid5_antagonism                                      3088
+domain_disinhibition                                 2600
+pid5_disinhibition                                   3066
+domain_psychoticism                                  1796
+pid5_psychoticism                                    2996
+domain_negative_affect:pid5_negative_affectivity     3218
+domain_detachment:pid5_detachment                    2666
+domain_antagonism:pid5_antagonism                    2675
+domain_disinhibition:pid5_disinhibition              2869
+domain_psychoticism:pid5_psychoticism                3051
 
 Further Distributional Parameters:
       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma     0.53      0.01     0.52     0.54 1.00     4865     2944
-alpha     1.20      0.11     0.98     1.42 1.00     3705     3458
+sigma     0.53      0.01     0.52     0.54 1.00     2675     2890
+alpha     1.45      0.12     1.20     1.69 1.00     3844     2913
 
 Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -767,7 +753,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).
 \end{Shaded}
 
 \begin{verbatim}
-Warning: Found 13 observations with a pareto_k > 0.7 in model 'model_base'. We
+Warning: Found 24 observations with a pareto_k > 0.7 in model 'model_base'. We
 recommend to set 'moment_match = TRUE' in order to perform moment matching for
 problematic observations.
 \end{verbatim}
@@ -779,7 +765,7 @@ problematic observations.
 \end{Shaded}
 
 \begin{verbatim}
-Warning: Found 5 observations with a pareto_k > 0.7 in model 'model_alt'. We
+Warning: Found 20 observations with a pareto_k > 0.7 in model 'model_alt'. We
 recommend to set 'moment_match = TRUE' in order to perform moment matching for
 problematic observations.
 \end{verbatim}
@@ -793,7 +779,7 @@ problematic observations.
 \begin{verbatim}
            elpd_diff se_diff
 model_alt     0.0       0.0 
-model_base -475.1      42.1 
+model_base -416.8      55.7 
 \end{verbatim}
 
 \subsubsection{Visualizzare ELPD\_diff}\label{visualizzare-elpd_diff}
@@ -873,7 +859,7 @@ negativi.
 # A tibble: 1 x 4
       n n_better_alt proportion percent
   <int>        <int>      <dbl>   <dbl>
-1   350          263      0.751    75.1
+1   350          226      0.646    64.6
 \end{verbatim}
 
 Il 74\% dei soggetti mostrano una migliore predizione con il modello
@@ -919,7 +905,7 @@ quindi generalizzata, non guidata da pochi individui.
 
 \begin{verbatim}
     Estimate   Est.Error      Q2.5     Q97.5
-R2 0.6737499 0.004462602 0.6649309 0.6821722
+R2 0.6737426 0.004556891 0.6645596 0.6823755
 \end{verbatim}
 
 \begin{Shaded}
@@ -930,7 +916,7 @@ R2 0.6737499 0.004462602 0.6649309 0.6821722
 
 \begin{verbatim}
     Estimate   Est.Error      Q2.5     Q97.5
-R2 0.7224773 0.003742531 0.7149858 0.7297672
+R2 0.7216953 0.004324445 0.7131141 0.7298307
 \end{verbatim}
 
 \begin{Shaded}
@@ -957,16 +943,16 @@ R2 0.7224773 0.003742531 0.7149858 0.7297672
 # A tibble: 350 x 4
    user_id              mean_elpd_diff    se benefit_score[,1]
    <chr>                         <dbl> <dbl>             <dbl>
- 1 so_li_2004_10_29_776         -1.21  0.361              6.35
- 2 ch_va_2003_04_08_010         -1.03  0.525              5.31
- 3 el_ca_2003_06_14_053         -0.849 0.297              4.32
- 4 mi_lo_2005_03_17_960         -0.710 0.607              3.54
- 5 gi_ma_2004_01_10_447         -0.690 0.502              3.42
- 6 ca_fo_2002_08_30_071         -0.642 0.368              3.15
- 7 an_gr_2003_02_23_266         -0.630 0.622              3.09
- 8 al_ne_2005_11_07_247         -0.605 0.261              2.94
- 9 an_ba_2003_04_19_988         -0.526 0.144              2.50
-10 ir_mo_2005_02_23_157         -0.521 0.351              2.47
+ 1 so_li_2004_10_29_776         -1.86  0.551              7.71
+ 2 ch_va_2003_04_08_010         -1.52  0.935              6.25
+ 3 el_ca_2003_06_14_053         -0.903 0.496              3.59
+ 4 ca_fo_2002_08_30_071         -0.822 0.397              3.24
+ 5 el_bu_2003_09_24_545         -0.773 0.321              3.02
+ 6 mi_lo_2005_03_17_960         -0.762 0.841              2.98
+ 7 an_gr_2003_02_23_266         -0.697 0.686              2.70
+ 8 gi_ma_2004_01_10_447         -0.628 0.584              2.40
+ 9 ir_mo_2005_02_23_157         -0.568 0.475              2.14
+10 al_ne_2005_11_07_247         -0.564 0.349              2.12
 # i 340 more rows
 \end{verbatim}
 
