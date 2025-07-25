@@ -12,11 +12,11 @@ format:
       - right=1in
       - bottom=1in
     fontsize: 11pt
-    linestretch: 1.5
+    linestretch: 1.0
     colorlinks: true
     lot: false
     lof: false
-    highlight-style: github # Già ottimo per la compattazione
+    highlight-style: github 
     include-in-header: header.tex
     keep-tex: true
 editor: source
@@ -44,6 +44,7 @@ library(tibble)
 library(mice)
 ```
 
+Le misure "basali" corrispondenti ai 5 domini del PID-5 sono state calcolate **escludendo** i 15 item che vengono usati nelle notifiche EMA.
 
 ```{r}
 # Read and process 'esi_bf' data
@@ -250,7 +251,7 @@ df_self_comp_ema_scaled <- df_self_comp_ema %>%
 ```{r}
 #| output: false
 model_base <- brm(
-  ucs_neg ~ neg_aff_ema + 
+  ucs_neg ~ 1 +  
     domain_negative_affect + domain_detachment +
     domain_antagonism + domain_disinhibition + domain_psychoticism + 
     (1 + neg_aff_ema | user_id),
@@ -286,11 +287,13 @@ print(model_base)
 # Fit augmented Bayesian model with interaction effects
 model_alt <- brm(
   ucs_neg ~
-    (neg_aff_ema + domain_negative_affect + domain_detachment + 
-       domain_antagonism + domain_disinhibition + domain_psychoticism) *
-      (pid5_negative_affectivity + pid5_detachment + pid5_antagonism +
-         pid5_disinhibition + pid5_psychoticism) +
-    (1 + neg_aff_ema | user_id),
+    domain_negative_affect * pid5_negative_affectivity + 
+    domain_detachment * pid5_detachment +
+    domain_antagonism * pid5_antagonism + 
+    domain_disinhibition * pid5_disinhibition + 
+    domain_psychoticism * pid5_psychoticism +
+    (1 + pid5_negative_affectivity + pid5_detachment + pid5_antagonism +
+       pid5_disinhibition + pid5_psychoticism | user_id),
   data = df_self_comp_ema_scaled,
   family = skew_normal(),
   prior = c(
@@ -302,7 +305,7 @@ model_alt <- brm(
   chains = 4,
   cores = 4,
   iter = 2000,
-  seed = 123,
+  # seed = 123,
   backend = "cmdstanr",
   save_pars = save_pars(all = TRUE)
 )

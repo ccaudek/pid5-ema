@@ -1,3 +1,22 @@
+# Overview ----------------------------------------------------------------
+# Associated project:
+# Script purpose: Import the data and code the 5 domains of the PID-5, after
+#   removing the 3 items for each domain that are used in the EMA procedure.
+#
+# Written by: Corrado Caudek (corrado.caudek@unifi.it)
+# Version: 2025-07-25
+# Last update:
+# Status: In progress
+# Notes:
+# Remove these items: "pid5_13"                   "pid5_15"
+# "pid5_11"                   "pid5_3"                    "pid5_2"
+# "pid5_7"                    "pid5_14"                   "pid5_6"
+# "pid5_4"                    "pid5_12"                   "pid5_1"
+# "pid5_9"                    "pid5_5"                    "pid5_8"
+# "pid5_10"
+
+# Load necessary libraries ------------------------------------------------
+
 library(tidyverse)
 library(here)
 library(rio)
@@ -36,7 +55,26 @@ df_pid5 <- temp %>%
   rename_with(~ paste0("i_", seq_along(.)), -(1:4))
 
 
-# Item numeri da invertire (scala 0–3) :contentReference[oaicite:0]{index=0}
+# 1. Define items to remove
+to_be_removed <- c(
+  "i_13",
+  "i_15",
+  "i_11",
+  "i_3",
+  "i_2",
+  "i_7",
+  "i_14",
+  "i_6",
+  "i_4",
+  "i_12",
+  "i_1",
+  "i_9",
+  "i_5",
+  "i_8",
+  "i_10"
+)
+
+# 2. Reverse-score specified items
 rev_items <- c(
   7,
   30,
@@ -55,16 +93,13 @@ rev_items <- c(
   210,
   215
 )
-
 df_pid5 <- df_pid5 %>%
-  mutate(
-    across(
-      all_of(paste0("i_", rev_items)),
-      ~ ifelse(is.na(.x), NA_real_, 3 - as.numeric(.x))
-    )
-  )
+  mutate(across(
+    all_of(paste0("i_", rev_items)),
+    ~ ifelse(is.na(.x), NA_real_, 3 - as.numeric(.x))
+  ))
 
-# Facet → item numbers (PID‑5 scoring guide) :contentReference[oaicite:0]{index=0}
+# 3. Define original facet and domain mappings (as before)
 facet_items <- list(
   anhedonia = c(1, 23, 26, 30, 124, 155, 157, 189),
   anxiousness = c(79, 93, 95, 96, 109, 110, 130, 141, 174),
@@ -136,7 +171,6 @@ facet_items <- list(
   withdrawal = c(10, 20, 75, 82, 136, 146, 147, 161, 182, 186)
 )
 
-# Domain → facets mapping (PID‑5 scoring guide) :contentReference[oaicite:1]{index=1}
 domain_facets <- list(
   negative_affect = c(
     "emotional_lability",
@@ -153,37 +187,43 @@ domain_facets <- list(
   )
 )
 
-#--- 1. Facet total scores ----------------------------------------------------
-df_scores <- df_pid5 # <- data frame già con gli item i_1 … i_220 ricodificati
+# 4. Remove the EMA items from all facets
+to_be_removed_nums <- as.integer(gsub("i_", "", to_be_removed))
+facet_items_filtered <- lapply(facet_items, function(items) {
+  setdiff(items, to_be_removed_nums)
+})
 
-for (facet in names(facet_items)) {
-  cols <- paste0("i_", facet_items[[facet]])
+# 5. Recompute the scores excluding the EMA items
+df_scores <- df_pid5
+
+# Facet scores
+for (facet in names(facet_items_filtered)) {
+  item_names <- paste0("i_", facet_items_filtered[[facet]])
   df_scores[[paste0("facet_", facet)]] <- rowSums(
-    df_scores[, cols],
+    df_scores[, item_names],
     na.rm = TRUE
   )
 }
 
-#--- 2. Domain total scores ---------------------------------------------------
+# Domain scores
 for (dom in names(domain_facets)) {
-  facet_cols <- paste0("facet_", domain_facets[[dom]])
+  facet_names <- paste0("facet_", domain_facets[[dom]])
   df_scores[[paste0("domain_", dom)]] <- rowSums(
-    df_scores[, facet_cols],
+    df_scores[, facet_names],
     na.rm = TRUE
   )
 }
-# $ domain_negative_affect         <dbl> 24, 17, 59, 46, 38, 10, 35, 21, 53, 15, 30, 42, 25,…
-# $ domain_detachment              <dbl> 15, 15, 12, 15, 14, 1, 5, 30, 25, 1, 37, 15, 13, 22…
+
+# $ domain_negative_affect         <dbl> 24, 17, 56, 44, 38, 10, 34, 19, 50, 15, 30, 41, 24,…
+# $ domain_detachment              <dbl> 13, 12, 11, 12, 12, 1, 3, 28, 23, 0, 33, 13, 12, 17…
 # $ domain_antagonism              <dbl> 8, 7, 11, 6, 22, 4, 24, 5, 1, 3, 7, 9, 7, 5, 26, 8,…
-# $ domain_disinhibition           <dbl> 9, 7, 14, 9, 17, 11, 45, 18, 6, 7, 35, 19, 16, 16, …
-# $ domain_psychoticism            <dbl> 15, 8, 59, 25, 42, 10, 34, 28, 32, 9, 22, 24, 27, 5…
+# $ domain_disinhibition           <dbl> 8, 5, 12, 7, 14, 10, 40, 15, 6, 6, 33, 17, 14, 14, …
+# $ domain_psychoticism            <dbl> 14, 6, 57, 24, 40, 9, 34, 26, 30, 9, 22, 23, 27, 5,…
 
 #--- 3. (facoltativo) Seleziona solo id + punteggi ----------------------------
 df_scores <- df_scores %>%
-  select(date, user_id, starts_with("facet_"), starts_with("domain_"))
+  dplyr::select(date, user_id, starts_with("facet_"), starts_with("domain_"))
 
-
-# Correct user_id -------------------------------------------------------------
 
 # Careless responding ---------------------------------------------------------
 
