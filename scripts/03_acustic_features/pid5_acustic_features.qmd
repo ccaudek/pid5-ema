@@ -1,0 +1,367 @@
+---
+title: "Static PID-5 and EMA Self-Compassion"
+author: "Corrado Caudek"
+format:
+  pdf:
+    documentclass: article
+    classoption: onecolumn
+    papersize: a4
+    geometry:
+      - top=1in
+      - left=1in
+      - right=1in
+      - bottom=1in
+    fontsize: 11pt
+    linestretch: 1.0
+    colorlinks: true
+    lot: false
+    lof: false
+    highlight-style: github 
+    include-in-header: header.tex
+    keep-tex: true
+editor: source
+---
+
+
+```{r}
+#| echo: false
+#| output: false
+#| 
+# Load necessary libraries
+library(tidyverse)
+library(here)
+library(rio)
+library(brms)
+library(stringr)
+library(purrr)
+library(cmdstanr)
+options(mc.cores = parallel::detectCores())
+library(loo)
+library(ppcor)
+library(tidyr)
+library(broom)
+library(tibble)
+library(mice)
+library(lubridate)
+library(readxl)
+library(janitor)
+library(mice)
+library(miceadds)
+```
+
+Le misure "basali" corrispondenti ai 5 domini del PID-5 sono state calcolate **escludendo** i 15 item che vengono usati nelle notifiche EMA.
+
+```{r}
+# Read and process 'esi_bf' data
+esi_bf <- rio::import(
+  here::here(
+    "data",
+    "processed",
+    "esi_bf.csv"
+  )
+) |>
+  dplyr::distinct(user_id, .keep_all = TRUE) |> # Keep only distinct user_id
+  dplyr::select(user_id, esi_bf) # Select relevant columns
+
+# Read and process 'pid5' data
+pid5 <- rio::import(
+  here::here(
+    "data",
+    "processed",
+    "pid5.csv"
+  )
+) |>
+  dplyr::distinct(user_id, .keep_all = TRUE) |>  # Keep only distinct user_id
+  dplyr::select(user_id, starts_with("domain_")) # Select domain variables
+
+# Merge 'esi_bf' and 'pid5' data by user_id
+quest_df <- left_join(esi_bf, pid5, by = "user_id")
+```
+
+```{r}
+# Define list of user IDs with careless responding
+user_id_with_careless_responding <- c(
+  "ma_se_2005_11_14_490",
+  "reve20041021036",
+  "di_ma_2005_10_20_756",
+  "pa_sc_2005_09_10_468",
+  "il_re_2006_01_18_645",
+  "so_ma_2003_10_13_804",
+  "lo_ca_2005_05_07_05_437",
+  "va_ma_2005_05_31_567",
+  "no_un_2005_06_29_880",
+  "an_bo_1988_08_24_166",
+  "st_ma_2004_04_21_426",
+  "an_st_2005_10_16_052",
+  "vi_de_2002_12_30_067",
+  "gi_ru_2005_03_08_033",
+  "al_mi_2005_03_05_844",
+  "la_ma_2006_01_31_787",
+  "gi_lo_2004_06_27_237",
+  "ch_bi_2001_01_28_407",
+  "al_pe_2001_04_20_079",
+  "le_de_2003_09_05_067",
+  "fe_gr_2002_02_19_434",
+  "ma_ba_2002_09_09_052",
+  "ca_gi_2003_09_16_737",
+  "an_to_2003_08_06_114",
+  "al_se_2003_07_28_277",
+  "ja_tr_2002_10_06_487",
+  "el_ci_2002_02_15_057",
+  "se_ti_2000_03_04_975",
+  "co_ga_2003_10_29_614",
+  "al_ba_2003_18_07_905",
+  "bi_ro_2003_09_07_934",
+  "an_va_2004_04_08_527",
+  "ev_cr_2003_01_27_573"
+)
+
+# Filter out users with careless responses
+quest_df <- quest_df[!(quest_df$user_id %in% user_id_with_careless_responding), ]
+```
+
+
+## Acustic features
+
+```{r}
+file_path <- here::here("data", "raw", "acustic_features", "database_acfeat.xlsx")
+
+# 1) Funzione per ripulire spazi (anche NBSP) e slash
+fix_names <- function(nm) {
+  nm %>%
+    str_replace_all("[\\s\\u00A0]+", " ") %>%  # comprime spazi e NBSP
+    str_trim() %>%                             # toglie spazi ai bordi
+    str_replace_all("\\s*/\\s*", "_") %>%      # " / a / " -> "_a_"
+    str_replace_all("/+", "_") %>%             # eventuali "/" residui -> "_"
+    str_squish()
+}
+
+wanted_sheets <- c("Baseline", "Pre", "Post")
+sheets <- intersect(excel_sheets(file_path), wanted_sheets)
+
+# 2) Import + normalizzazione nomi (fix + snake_case)
+df1 <- map_dfr(
+  sheets,
+  ~ read_excel(file_path, sheet = .x) %>%
+    { setNames(., fix_names(names(.))) } %>%
+    clean_names(case = "snake") %>%            # snake_case definitivo
+    mutate(sheet = .x)
+)
+
+# 3) Separa Case in day e user_id (se serve)
+df1 <- df1 %>%
+  tidyr::separate_wider_regex(
+    case,
+    patterns = c(
+      day = "\\d{2}[-_]\\d{2}[-_]\\d{4}",
+      "\\s*-\\s*",
+      user_id = ".+"
+    )
+  ) %>%
+  mutate(day = lubridate::dmy(stringr::str_replace_all(day, "[-_]", "/")),
+         sheet = factor(sheet, levels = c("Baseline","Pre","Post")))
+```
+
+Join con le misure basali:
+
+```{r}
+df2 <- left_join(df1, quest_df, by = "user_id")
+```
+
+
+```{r}
+acoustic_feats <- c(
+  "f0_min_hz_a",
+  "f0_median_hz_i",
+  "signalduration_s_i",
+  "f0_mean_hz_u",
+  "f0_median_hz_u",
+  "f1_min_hz_u",
+  "mfcc3_std",
+  "mfcc9_std",
+  "mfcc11_skewness",
+  "mfcc11_median",
+  "mfcc3_iqr",
+  "mfcc9_iqr",
+  "mfcc9_p25th"
+)
+
+# check rapido: quali mancano?
+setdiff(acoustic_feats, names(df2))
+```
+
+
+```{r}
+# colonne PID-5 (come da tuo glimpse)
+pid5_cols <- c("domain_negative_affect", "domain_detachment",
+               "domain_antagonism", "domain_disinhibition",
+               "domain_psychoticism")
+
+# tabella a livello soggetto: una riga per user_id
+pid_subject <- df2 %>%
+  dplyr::select(user_id, esi_bf, all_of(pid5_cols)) %>%
+  dplyr::distinct(user_id, .keep_all = TRUE)
+
+```
+
+
+```{r}
+set.seed(1234)
+
+# costruisci lo schema di metodi: PMM per i 5 domini (sono punteggi interi ma PMM va benissimo)
+meth <- make.method(pid_subject)
+meth[pid5_cols] <- "pmm"     # predittive mean matching
+meth["esi_bf"]   <- "pmm"    # opzionale, se vuoi permettere l'imputazione di esi_bf
+
+# matrice di predittori: non usare user_id come predittore
+pred <- make.predictorMatrix(pid_subject)
+pred[, "user_id"] <- 0
+pred["user_id", ] <- 0
+
+# avvia imputazione (m=20 consigliato)
+imp_pid <- mice(pid_subject, m = 20, maxit = 20, method = meth, predictorMatrix = pred, printFlag = TRUE)
+```
+
+
+```{r}
+# ottieni i m data.frame imputati a livello soggetto
+pid_imputed_list <- lapply(1:imp_pid$m, function(k) complete(imp_pid, action = k))
+
+# (opzionale) arrotonda ai numeri interi i 5 domini
+pid_imputed_list <- lapply(pid_imputed_list, function(d) {
+  d %>%
+    mutate(across(all_of(pid5_cols), ~ round(.x)))
+})
+
+# crea i m dataset analitici completi (join con df2)
+analysis_list <- lapply(pid_imputed_list, function(pid_imp) {
+  df2 %>%
+    dplyr::select(-all_of(pid5_cols)) %>%        # togli eventuali versioni con NA
+    left_join(pid_imp, by = "user_id")    # innesta i domini imputati
+})
+```
+
+
+```{r}
+acoustic_feats <- c(
+  "f0_min_hz_a",
+  "f0_median_hz_i",
+  # "signalduration_s_i",  # esclusa come richiesto
+  "f0_mean_hz_u",
+  "f0_median_hz_u",
+  "f1_min_hz_u",
+  "mfcc3_std",
+  "mfcc9_std",
+  "mfcc11_skewness",
+  "mfcc11_median",
+  "mfcc3_iqr",
+  "mfcc9_iqr",
+  "mfcc9_p25th"
+)
+
+build_deltas <- function(dat) {
+  ac_long <- dat %>%
+    dplyr::select(
+      user_id,
+      sheet,
+      dplyr::all_of(acoustic_feats),
+      dplyr::all_of(pid5_cols),
+      dplyr::any_of("esi_bf")  # <-- stringa, non simbolo
+    ) %>%
+    tidyr::pivot_longer(
+      cols = dplyr::all_of(acoustic_feats),
+      names_to = "feature", values_to = "value"
+    )
+
+  deltas <- ac_long %>%
+    dplyr::arrange(user_id, feature, sheet) %>%
+    dplyr::group_by(user_id, feature) %>%
+    dplyr::summarize(
+      delta_pre_minus_base = if (all(c("Baseline","Pre") %in% sheet)) {
+        value[sheet == "Pre"] - value[sheet == "Baseline"]
+      } else NA_real_,
+      delta_post_minus_pre = if (all(c("Pre","Post") %in% sheet)) {
+        value[sheet == "Post"] - value[sheet == "Pre"]
+      } else NA_real_,
+      .groups = "drop"
+    ) %>%
+    tidyr::pivot_longer(
+      c(delta_pre_minus_base, delta_post_minus_pre),
+      names_to = "contrast", values_to = "delta"
+    ) %>%
+    dplyr::mutate(
+      contrast = factor(
+        contrast,
+        levels = c("delta_pre_minus_base", "delta_post_minus_pre"),
+        labels = c("Pre - Baseline", "Post - Pre")
+      )
+    ) %>%
+    dplyr::left_join(
+      dat %>%
+        dplyr::select(user_id, dplyr::all_of(pid5_cols), dplyr::any_of("esi_bf")) %>%
+        dplyr::distinct(),
+      by = "user_id"
+    )
+
+  deltas
+}
+```
+
+
+```{r}
+fit_one_imputation <- function(deltas_df) {
+  dd <- deltas_df %>%
+    mutate(across(all_of(pid5_cols), ~ as.numeric(scale(.x))),
+           pid5_composite = rowMeans(across(all_of(pid5_cols)), na.rm = TRUE)) %>%
+    filter(!is.na(delta))
+  
+  # stima separata per (feature, contrast)
+  res <- dd %>%
+    group_by(feature, contrast) %>%
+    group_modify(~ {
+      fit <- lm(delta ~ pid5_composite, data = .x)
+      tidy(fit) %>% filter(term == "pid5_composite")
+    }) %>%
+    ungroup() %>%
+    select(feature, contrast, estimate, std.error)
+  
+  res
+}
+
+# stima su ciascuna imputazione
+ests_list <- lapply(deltas_list, fit_one_imputation)
+
+# pooling Rubin per ciascuna coppia (feature, contrast)
+pooled <- bind_rows(
+  Map(function(df, m_id) mutate(df, .imp = m_id), ests_list, seq_along(ests_list))
+) %>%
+  group_by(feature, contrast) %>%
+  summarize(
+    # miceadds::mi.meld richiede vettori di stime e SE per le m imputazioni
+    {
+      mm <- mi.meld(q = estimate, se = std.error)
+      tibble(
+        qbar = mm$q.mi,             # stima pooled
+        se   = mm$se.mi,
+        tval = mm$q.mi / mm$se.mi,
+        df   = mm$df.mi,
+        p    = 2*pt(abs(tval), df = mm$df.mi, lower.tail = FALSE),
+        conf_low  = qbar - qt(.975, df = mm$df.mi) * se,
+        conf_high = qbar + qt(.975, df = mm$df.mi) * se
+      )
+    },
+    .groups = "drop"
+  ) %>%
+  arrange(contrast, p)
+
+pooled
+
+```
+
+
+
+
+
+
+
+

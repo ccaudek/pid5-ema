@@ -1,0 +1,1100 @@
+---
+title: "Static PID-5 and EMA Self-Compassion"
+author:
+  - "Corrado Caudek"
+format:
+  pdf:
+    documentclass: article
+    classoption: 
+      - onecolumn
+    papersize: a4
+    geometry:
+      - top=1in
+      - left=1in
+      - right=1in
+      - bottom=1in
+    fontsize: 11pt
+    linestretch: 1.5
+    colorlinks: true
+    lot: true        # List of tables
+    lof: true        # List of figures
+    highlight-style: github
+    include-in-header: header.tex
+    keep-tex: true
+editor: source
+---
+
+
+```{r}
+#| echo: false
+#| output: false
+#| 
+# Load necessary libraries
+library(tidyverse)
+library(here)
+library(rio)
+library(brms)
+library(stringr)
+library(purrr)
+library(cmdstanr)
+options(mc.cores = parallel::detectCores())
+library(loo)
+library(ppcor)
+library(tidyr)
+library(broom)
+library(tibble)
+```
+
+
+```{r}
+# Read and process 'esi_bf' data
+esi_bf <- rio::import(
+  here::here(
+    "data",
+    "processed",
+    "esi_bf.csv"
+  )
+) |>
+  dplyr::distinct(user_id, .keep_all = TRUE) |> # Keep only distinct user_id
+  dplyr::select(user_id, esi_bf) # Select relevant columns
+
+# Read and process 'pid5' data
+pid5 <- rio::import(
+  here::here(
+    "data",
+    "processed",
+    "pid5.csv"
+  )
+) |>
+  dplyr::distinct(user_id, .keep_all = TRUE) |>  # Keep only distinct user_id
+  dplyr::select(user_id, starts_with("domain_")) # Select domain variables
+
+# Merge 'esi_bf' and 'pid5' data by user_id
+df <- left_join(esi_bf, pid5, by = "user_id")
+```
+
+```{r}
+# Define list of user IDs with careless responding
+user_id_with_careless_responding <- c(
+  "ma_se_2005_11_14_490",
+  "reve20041021036",
+  "di_ma_2005_10_20_756",
+  "pa_sc_2005_09_10_468",
+  "il_re_2006_01_18_645",
+  "so_ma_2003_10_13_804",
+  "lo_ca_2005_05_07_05_437",
+  "va_ma_2005_05_31_567",
+  "no_un_2005_06_29_880",
+  "an_bo_1988_08_24_166",
+  "st_ma_2004_04_21_426",
+  "an_st_2005_10_16_052",
+  "vi_de_2002_12_30_067",
+  "gi_ru_2005_03_08_033",
+  "al_mi_2005_03_05_844",
+  "la_ma_2006_01_31_787",
+  "gi_lo_2004_06_27_237",
+  "ch_bi_2001_01_28_407",
+  "al_pe_2001_04_20_079",
+  "le_de_2003_09_05_067",
+  "fe_gr_2002_02_19_434",
+  "ma_ba_2002_09_09_052",
+  "ca_gi_2003_09_16_737",
+  "an_to_2003_08_06_114",
+  "al_se_2003_07_28_277",
+  "ja_tr_2002_10_06_487",
+  "el_ci_2002_02_15_057",
+  "se_ti_2000_03_04_975",
+  "co_ga_2003_10_29_614",
+  "al_ba_2003_18_07_905",
+  "bi_ro_2003_09_07_934",
+  "an_va_2004_04_08_527",
+  "ev_cr_2003_01_27_573"
+)
+
+# Filter out users with careless responses
+df1 <- df[!(df$user_id %in% user_id_with_careless_responding), ]
+```
+
+
+```{r}
+# Read EMA data and rename 'subj_code' to 'user_id'
+ema_raw <- readRDS(
+  here::here(
+    "data",
+    "raw",
+    "ema",
+    "ema_data_scoring.RDS"
+  )
+) |>
+  dplyr::rename(
+    user_id = subj_code
+  )
+
+# Merge EMA data with filtered main data
+df2 <- left_join(df1, ema_raw, by = "user_id")
+
+# Verify number of unique users
+length(unique(df2$user_id))
+```
+
+## Compliance 
+
+Escludiamo i soggetti che hanno risposto a meno di 10 notifiche.
+
+```{r}
+# Conta quante risposte EMA ha fornito ciascun soggetto
+user_counts <- df2 %>%
+  group_by(user_id) %>%
+  summarise(n_responses = n()) %>%
+  ungroup()
+
+# Tieni solo i soggetti con almeno 10 risposte
+valid_users <- user_counts %>%
+  filter(n_responses >= 10) %>%
+  pull(user_id)
+
+# Filtra il dataframe originale
+df2 <- df2 %>%
+  dplyr::filter(user_id %in% valid_users)
+```
+
+
+```{r}
+length(unique(df2$user_id))
+```
+
+## Generate negative instant mood
+
+
+```{r}
+# Costruisce una misura media dell'affetto negativo momentaneo
+
+# Seleziona solo le colonne rilevanti (per velocità)
+items <- c("sad", "angry", "happy", "satisfied")
+
+# Imputa i missing (1 solo imputazione, dato che i NA sono pochi)
+imputed <- mice(df2[, items], m = 1, maxit = 10, seed = 123)
+
+# Estrai il dataset imputato e sostituisci le colonne originali
+df2_imputed <- complete(imputed)
+df2[, items] <- df2_imputed[, items]
+
+df2 <- df2 %>%
+  mutate(
+    happy_reversed = 100 - happy, # Scala 0-100
+    satisfied_reversed = 100 - satisfied,
+    neg_aff_ema = rowMeans(
+      cbind(sad, angry, happy_reversed, satisfied_reversed),
+      na.rm = TRUE
+    )
+  )
+```
+
+
+## Self-compassion negativa
+
+Consideriamo solo le notifiche dove Self-Compassion è stata misurata.
+
+
+```{r}
+df_self_comp_ema <- df2 %>%
+  dplyr::filter(!is.na(ucs_neg) & !is.na(cs_pos))
+
+length(unique(df_self_comp_ema$user_id))
+```
+
+```{r}
+dim(df_self_comp_ema)
+```
+
+```{r}
+df_self_comp_ema_scaled <- df_self_comp_ema %>%
+  dplyr::select(
+    ucs_neg,
+    domain_negative_affect,   
+    domain_detachment,
+    domain_antagonism,
+    domain_disinhibition,
+    domain_psychoticism,
+    neg_aff_ema,
+    pid5_negative_affectivity,
+    pid5_detachment,
+    pid5_antagonism,
+    pid5_disinhibition,
+    pid5_psychoticism,
+    user_id # Mantiene user_id così com'è
+  ) %>%
+  dplyr::mutate(
+    # Applica la standardizzazione (scale) a tutte le colonne selezionate
+    # tranne user_id. as.vector() è usato per assicurare che l'output sia un vettore.
+    dplyr::across(
+      c(
+        ucs_neg,
+        neg_aff_ema,
+        domain_negative_affect,   
+        domain_detachment,
+        domain_antagonism,
+        domain_disinhibition,
+        domain_psychoticism,
+        pid5_negative_affectivity,
+        pid5_detachment,
+        pid5_antagonism,
+        pid5_disinhibition,
+        pid5_psychoticism
+      ),
+      ~ as.vector(scale(.))
+    )
+  )
+```
+
+
+```{r}
+model_base <- brm(
+  ucs_neg ~ neg_aff_ema + 
+    domain_negative_affect + domain_detachment +
+    domain_antagonism + domain_disinhibition + domain_psychoticism + 
+    (1 + neg_aff_ema | user_id),
+  data = df_self_comp_ema_scaled,
+  family = skew_normal(),
+  prior = c(
+    prior(normal(0, 1), class = "Intercept"),
+    prior(normal(0, 1), class = "b"),
+    prior(exponential(1), class = "sd"),
+    prior(exponential(1), class = "sigma")
+  ),
+  chains = 4,
+  cores = 4,
+  iter = 2000,
+  seed = 123,
+  backend = "cmdstanr",
+  save_pars = save_pars(all = TRUE)
+)
+
+# Posterior predictive check for the baseline model
+pp_check(model_base)
+print(model_base)
+```
+
+```{r}
+# Fit augmented Bayesian model with interaction effects
+model_alt <- brm(
+  ucs_neg ~
+    (neg_aff_ema + domain_negative_affect + domain_detachment + 
+       domain_antagonism + domain_disinhibition + domain_psychoticism) *
+      (pid5_negative_affectivity + pid5_detachment + pid5_antagonism +
+         pid5_disinhibition + pid5_psychoticism) +
+    (1 + neg_aff_ema | user_id),
+  data = df_self_comp_ema_scaled,
+  family = skew_normal(),
+  prior = c(
+    prior(normal(0, 1), class = "Intercept"),
+    prior(normal(0, 1), class = "b"),
+    prior(exponential(1), class = "sd"),
+    prior(exponential(1), class = "sigma")
+  ),
+  chains = 4,
+  cores = 4,
+  iter = 2000,
+  seed = 123,
+  backend = "cmdstanr",
+  save_pars = save_pars(all = TRUE)
+)
+
+pp_check(model_alt)
+print(model_alt)
+```
+
+
+```{r}
+loo0 <- loo(model_base, save_psis = TRUE)
+loo1 <- loo(model_alt, save_psis = TRUE)
+loo_compare(loo0, loo1)
+```
+
+### Visualizzare ELPD_diff
+
+Visualizzare dove il modello alternativo (model_alt) migliora la predizione rispetto al modello di base (model_base), a livello di soggetto.
+
+
+```{r}
+# Differenza pointwise tra i due modelli
+elpd_diff <- loo0$pointwise[, "elpd_loo"] - loo1$pointwise[, "elpd_loo"]
+```
+
+
+```{r}
+# Recupera i dati usati nel modello
+model_data <- model_base$data
+
+# Aggiungi la colonna con la differenza di ELPD
+model_data$elpd_diff <- elpd_diff
+```
+
+```{r}
+subject_diffs <- model_data %>%
+  group_by(user_id) %>%
+  summarise(
+    mean_elpd_diff = mean(elpd_diff, na.rm = TRUE),
+    se = sd(elpd_diff, na.rm = TRUE) / sqrt(n())
+  ) %>%
+  arrange(mean_elpd_diff)
+```
+
+
+```{r}
+ggplot(subject_diffs, aes(x = reorder(user_id, mean_elpd_diff), y = mean_elpd_diff)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean_elpd_diff - se, ymax = mean_elpd_diff + se),
+                width = 0.2, alpha = 0.3) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  coord_flip() +
+  labs(title = "ELPD difference by subject",
+       x = "user_id (ordered)",
+       y = "ELPD(model_base) - ELPD(model_alt)") +
+  theme_minimal() +
+  scale_x_discrete(labels = NULL)
+```
+
+Ogni punto rappresenta un soggetto. L'asse y mostra la differenza di ELPD tra i modelli: ELPD_base − ELPD_alt. I valori sotto lo zero indicano che il modello alternativo predice meglio per quel soggetto. Le barre di errore indicano l’incertezza (errore standard) per ciascun soggetto. Nel caso presente, dato il valore complessivo di elpd_diff = -466, ci aspettiamo che la maggior parte dei soggetti abbia valori negativi.
+
+```{r}
+subject_diffs %>%
+  summarise(
+    n = n(),
+    n_better_alt = sum(mean_elpd_diff < 0),
+    proportion = n_better_alt / n,
+    percent = proportion * 100
+  )
+```
+
+Il 74% dei soggetti mostrano una migliore predizione con il modello alternativo rispetto al modello base. La preferenza per model_alt è quindi generalizzata, non guidata da pochi individui.
+
+
+```{r}
+ggplot(subject_diffs, aes(x = mean_elpd_diff)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  labs(
+    title = "Distribuzione delle differenze di ELPD",
+    x = "ELPD(model_base) − ELPD(model_alt)",
+    y = "Numero di soggetti"
+  ) +
+  theme_minimal()
+```
+```{r}
+ggplot(subject_diffs, aes(x = mean_elpd_diff)) +
+  geom_density(fill = "skyblue", alpha = 0.6) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = quantile(subject_diffs$mean_elpd_diff, 0.95), color = "red") +
+  labs(title = "Soggetti per cui il modello peggiora",
+       subtitle = "Valori oltre il 95° percentile evidenziati",
+       x = "mean_elpd_diff", y = "Densità") +
+  theme_minimal()
+```
+
+
+```{r}
+bayes_R2(model_base)
+bayes_R2(model_alt)
+```
+
+
+```{r}
+# K-fold cross-validation (e.g., 10 folds)
+# kfold_base <- kfold(model_base, K = 5, seed = 123)
+# kfold_alt  <- kfold(model_alt,  K = 5, seed = 123)
+# kfold_compare(kfold_base, kfold_alt)
+# Se elpd_diff è negativo per model_base, vuol dire che model_alt predice meglio 
+# anche in validazione k-fold.
+```
+
+
+```{r}
+subject_diffs <- subject_diffs %>%
+  mutate(benefit_score = scale(-mean_elpd_diff)) 
+# valori alti = miglioramento maggiore
+subject_diffs
+```
+
+### Discussione dei risultati: impatto delle misure dinamiche sui modelli predittivi
+
+L'obiettivo principale di questa analisi era valutare se l’integrazione delle **misure dinamiche dei tratti disadattivi di personalità** (ovvero, le valutazioni settimanali del PID-5 tramite EMA) migliorasse la capacità di prevedere l’intensità della **self-compassion negativa** in risposta ad affetti negativi momentanei.
+
+Per testare questa ipotesi, abbiamo confrontato due modelli:
+
+* un **modello base**, in cui la self-compassion negativa (UCS) era spiegata da indicatori EMA dell’affetto negativo e dai tratti PID-5 valutati una sola volta all’inizio dello studio;
+* un **modello alternativo**, in cui gli stessi predittori interagivano con le **misure EMA dei cinque domini PID-5**, raccolte in parallelo ai dati di affetto negativo.
+
+I risultati dell’analisi bayesiana con confronto via ELPD (Expected Log Predictive Density) indicano un chiaro miglioramento nella predizione per il modello che include le **interazioni con i tratti EMA**. In particolare, la differenza complessiva di ELPD tra i modelli è di **ΔELPD = -466**, a favore del modello alternativo. Questo effetto non è guidato da pochi casi estremi: in oltre il **74% dei soggetti**, il modello con i tratti EMA ha fornito predizioni migliori, e la distribuzione soggetto-specifica delle differenze di ELPD è fortemente sbilanciata a favore del modello dinamico.
+
+Anche la **varianza spiegata a posteriori (Bayes R²)** è maggiore nel modello alternativo (R² = 0.52 vs. 0.41), suggerendo che la variabilità intra-individuale nei tratti di personalità è un moderatore cruciale della reattività affettiva momentanea.
+
+Dal punto di vista teorico, questi risultati forniscono supporto all’ipotesi che la relazione tra affetto negativo e self-compassion negativa non sia una funzione stabile e fissa, ma **una funzione modulata dai tratti di personalità così come si esprimono nel momento**. L’uso delle misure EMA del PID-5 cattura queste **fluttuazioni disposizionali contestuali**, che non sono accessibili tramite la sola somministrazione statica del PID-5 a inizio studio.
+
+In linea con un approccio **idionomico**, che mira a comprendere il funzionamento individuale nel suo contesto situato, l’evidenza raccolta suggerisce che **combinare misure di stato (affetto negativo momentaneo) con misure di tratto dinamiche (PID-5 EMA)** permette una modellazione più sensibile delle vulnerabilità psicopatologiche. Questi risultati rafforzano l’idea che le valutazioni EMA non siano semplicemente misure rumorose, ma rappresentino un valore aggiunto per comprendere **quando** e **per chi** si attivano risposte maladattive, come la self-compassion negativa.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Se stai lavorando con CS/UCS (compassionate / uncompassionate self-responding):
+
+Puoi costruire outcome come:
+
+- La correlazione tra CS e UCS (stabilità della relazione tra i due),
+- La variabilità momentanea di CS/UCS,
+- La reattività della UCS alla negativa affect.
+
+
+```{r}
+# Calculate correlations between 'cs_pos' and 'ucs_neg' for each user
+cor_df <- df2 %>%
+  group_by(user_id) %>%
+  dplyr::filter(!is.na(cs_pos) & !is.na(ucs_neg)) %>%
+  dplyr::filter(n() >= 2) %>% # almeno due coppie complete
+  summarise(corr_cs_ucs = cor(cs_pos, ucs_neg, use = "complete.obs")) %>%
+  ungroup()
+
+# Calculate standard deviations of 'cs_pos' and 'ucs_neg' per user
+var_df <- df2 %>%
+  group_by(user_id) %>%
+  summarise(
+    sd_cs = sd(cs_pos, na.rm = TRUE),
+    sd_ucs = sd(ucs_neg, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+# Create an aggregated variable 'neg_aff_ema' representing emotional appraisal
+df2 <- df2 %>%
+  mutate(
+    neg_aff_ema = rowMeans(
+      dplyr::select(., sad, angry, happy = -happy), # Compute mean of emotions
+      na.rm = TRUE
+    )
+  )
+```
+
+
+```{r}
+# Estimate the slope of UCS on neg_aff_ema for each user
+slopes_df <- df2 %>%
+  group_by(user_id) %>%
+  dplyr::filter(n() >= 10) %>% # Keep users with sufficient data points
+  nest() %>%  # Nest data for modeling
+  mutate(
+    model = map(data, ~ lm(ucs_neg ~ neg_aff_ema, data = .x)),
+    tidied = map(model, ~ tidy(.x))
+  ) %>%
+  unnest(tidied) %>%  # Flatten results
+  dplyr::filter(term == "neg_aff_ema") %>%  # Focus on slope estimate
+  dplyr::select(user_id, slope_ucs_neg_aff = estimate)
+```
+
+
+```{r}
+# Combine all computed metrics into a single data frame
+all_df <- reduce(
+  list(cor_df, var_df, slopes_df),
+  full_join,
+  by = "user_id"
+)
+
+# Standardize 'neg_aff_ema' within each user
+df2 <- df2 %>%
+  group_by(user_id) %>%
+  # Standardize 'neg_aff_ema'
+  mutate(neg_aff_ema_c = scale(neg_aff_ema, scale = TRUE)) %>% 
+  ungroup()
+
+# Merge all metrics and predictions into final dataset
+final_df <- df2 %>%
+  dplyr::select(user_id, starts_with("pid5_")) %>%   # Select predictors
+  distinct() %>%                                     # Remove duplicates
+  left_join(all_df, by = "user_id") %>%              # Merge outcome variables
+  mutate(across(where(is.numeric) & !matches("user_id"), ~ as.numeric(scale(.))))
+```
+
+
+```{r}
+# Create a data frame for modeling 'slope_ucs_neg_aff' as outcome
+model_df <- final_df %>%
+  dplyr::filter(complete.cases(
+    slope_ucs_neg_aff,
+    pid5_negative_affectivity, pid5_detachment,
+    pid5_antagonism, pid5_disinhibition, pid5_psychoticism 
+  ))
+
+# Fit a linear model predicting 'slope_ucs_neg_aff'
+model <- lm(
+  slope_ucs_neg_aff ~
+    pid5_negative_affectivity + pid5_detachment + pid5_antagonism + 
+    pid5_disinhibition + pid5_psychoticism,
+  data = model_df
+)
+
+# Summarize the regression results
+summary(model)
+```
+
+
+
+
+
+## Altre analisi
+
+1. Esiti dinamici o variabili aggregate EMA
+Invece di usare esi_bf (presumibilmente una misura statica di baseline), potresti calcolare degli esiti basati sulle misure EMA:
+
+a. Variabilità intraindividuale
+
+SD (o MAD) delle misure EMA per ogni soggetto (ad es. fluttuazioni dell’umore, della self-compassion, del distress).
+Outcome: può riflettere instabilità emotiva o vulnerabilità psicologica.
+Obiettivo: vedere se i tratti PID-5 o le variabili EMA (come decentering o valutazione del contesto) predicono la labilità emozionale.
+
+b. Media EMA
+
+Calcola la media di un costrutto EMA (es. self-compassion, distress, contesto percepito) per ogni soggetto.
+Outcome: il livello medio momentaneo di autoregolazione, emozione negativa, ecc.
+Obiettivo: valutare se i tratti e/o le variabili EMA spiegano differenze nei livelli medi.
+c. Reattività a contesto o stress
+
+Calcola, per ogni soggetto, la reattività (es. slope tra emozione negativa e valutazione del contesto).
+Outcome: stima individuale di quanto le emozioni rispondano a eventi stressanti.
+Obiettivo: testare se i tratti PID-5 spiegano la maggiore o minore reattività.
+
+
+
+```{r}
+library(tidyverse)
+
+# Calcolo della SD e MAD per ogni soggetto
+variability_df <- df2 %>%
+  group_by(user_id) %>%
+  summarise(
+    n_obs = sum(!is.na(neg_aff_ema)),
+    neg_aff_sd  = sd(neg_aff_ema, na.rm = TRUE),
+    neg_aff_mad = mad(neg_aff_ema, na.rm = TRUE)
+  ) %>%
+  dplyr::filter(n_obs >= 5)  # almeno 5 osservazioni per una stima stabile
+
+```
+
+
+```{r}
+# Aggrega predittori EMA al livello del soggetto
+predictors_df <- df2 %>%
+  group_by(user_id) %>%
+  summarise(
+    pid5_na = first(pid5_negative_affectivity),
+    pid5_det = first(pid5_detachment),
+    pid5_ant = first(pid5_antagonism),
+    pid5_dis = first(pid5_disinhibition),
+    pid5_psy = first(pid5_psychoticism),
+    tripm_boldness = first(tripm_boldness),
+    tripm_meanness = first(tripm_meanness),
+    tripm_sum = first(tripm_sum),
+    cope_avoid = mean(cope_avoid, na.rm = TRUE),
+    context_threat = mean(context_threat, na.rm = TRUE),
+    context_support = mean(context_support, na.rm = TRUE),
+    context_control = mean(context_control, na.rm = TRUE),
+    context_quality = mean(context_quality, na.rm = TRUE)
+  )
+
+# Merge
+final_df <- variability_df %>%
+  left_join(predictors_df, by = "user_id") %>%
+  drop_na()
+
+```
+
+
+```{r}
+# Standardizzazione per confrontabilità
+final_df_scaled <- final_df %>%
+  mutate(across(c(neg_aff_sd, pid5_na:context_quality), scale))
+
+# Modello lineare
+model_sd <- lm(neg_aff_sd ~ pid5_na + pid5_det + pid5_ant + pid5_dis + pid5_psy +
+                context_threat + context_support + context_control + context_quality,
+               data = final_df_scaled)
+
+summary(model_sd)
+
+```
+
+
+```{r}
+form <- bf(
+  neg_aff_sd ~ pid5_na + pid5_det + pid5_ant + pid5_dis + pid5_psy +
+    context_threat + context_support + context_control + context_quality)
+
+# Modello bayesiano
+fit_sd <- brm(formula = form,
+              data = final_df_scaled,
+              family = gaussian(),
+              prior = set_prior("normal(0, 1)", class = "b"),
+              cores = 4, chains = 4, iter = 2000, backend = "cmdstanr")
+
+summary(fit_sd)
+bayes_R2(fit_sd)
+```
+
+### Risultati: predittori della labilità emotiva intraindividuale
+
+Abbiamo stimato un modello bayesiano di regressione lineare per testare se la variabilità intraindividuale dell’affetto negativo (misurata come deviazione standard per ciascun soggetto nelle rilevazioni EMA) fosse associata a tratti disfunzionali di personalità (PID-5) e alle valutazioni soggettive del contesto quotidiano. La variabilità dell’affetto negativo è stata standardizzata, così come tutti i predittori.
+
+Il modello mostra un R² bayesiano medio pari a 0.15 (95% CI: [0.10, 0.21]), indicando che circa il 15% della varianza interindividuale nella labilità emotiva è spiegato dai predittori considerati.
+
+#### Effetti associati ai tratti PID-5
+
+Tra i tratti del modello PID-5, solo la disinibizione mostra un effetto coerente con l’ipotesi di maggiore labilità affettiva (Estimate = 0.12, 95% CI: [0.00, 0.24]). Anche se l'intervallo di credibilità tocca lo zero inferiore, la tendenza suggerisce che soggetti con maggiore impulsività, difficoltà di pianificazione e scarso controllo comportamentale tendono a manifestare maggiori fluttuazioni dell’umore nel corso delle giornate.
+
+Gli altri tratti, come affettività negativa, distacco, antagonismo e psicoticismo, non mostrano associazioni robuste con la variabilità dell’affetto negativo. È interessante notare che, nonostante il tratto di affettività negativa sia spesso associato a più alti livelli di distress, esso non predice in modo affidabile la variabilità affettiva, suggerendo che possa riflettere più una tendenza cronica al disagio che una sua instabilità nel tempo.
+
+#### Effetti delle valutazioni del contesto (EMA)
+
+Tra le valutazioni soggettive del contesto quotidiano, l’unico predittore con effetto credibilmente diverso da zero è context_threat (percezione di minaccia nel contesto), che mostra una associazione positiva con la labilità affettiva (Estimate = 0.21, 95% CI: [0.08, 0.34]). Ciò suggerisce che le persone che tendono a percepire con maggiore frequenza il proprio ambiente come minaccioso mostrano anche un’affettività più instabile nel breve termine.
+
+Al contrario, il supporto percepito, il controllo sul contesto e la qualità globale dell’esperienza non risultano associati in modo affidabile alla variabilità affettiva. Tuttavia, per context_control, il segno negativo dell’effetto (Estimate = -0.14, 95% CI: [-0.31, 0.03]) indica una possibile tendenza protettiva, che meriterebbe approfondimenti in modelli con maggiore potere statistico.
+
+#### Discussione
+
+Nel complesso, i risultati indicano che la labilità emotiva (variabilità dell’affetto negativo) non è spiegata tanto da tratti cronici come l’affettività negativa, ma da indicatori situazionali e da tratti legati al comportamento impulsivo. Questo è in linea con l’ipotesi che la labilità emotiva rappresenti una vulnerabilità distinta rispetto al distress cronico, e che sia particolarmente influenzata dalla percezione momentanea di minaccia e dalla difficoltà nel regolare il comportamento.
+
+Questi risultati possono avere implicazioni teoriche e cliniche:
+
+- Dal punto di vista teorico, supportano una concezione dinamica dell’emotività, sensibile a fattori situazionali.
+- Dal punto di vista applicativo, suggeriscono che interventi mirati a ridurre la percezione soggettiva di minaccia e a migliorare il controllo comportamentale potrebbero contribuire a una maggiore stabilità emotiva.
+
+Ulteriori analisi potrebbero esplorare interazioni tra i tratti e il contesto, o l’effetto di coping e decentramento nella regolazione delle fluttuazioni affettive.
+
+## Reattività al contesto
+
+Dal punto di vista statistico, questo significa stimare per ciascun soggetto una slope individuale che quantifica quanto l’affetto negativo aumenta o diminuisce in relazione alla percezione del contesto (stress, minaccia, qualità, ecc.).
+
+Obiettivo
+
+- Step 1: Per ogni soggetto, stimare la pendenza (slope) della regressione:
+neg_aff_ema ~ context_threat (o altre variabili contestuali EMA)
+→ questa slope rappresenta la reattività individuale allo stress.
+- Step 2: Predire queste slope con i tratti di personalità (PID-5), ad es.
+slope_reactivity ~ pid5_negative_affectivity + ...
+
+
+### Step 1: Calcolo delle slope individuali (reattività)
+
+
+```{r}
+# Stima la reattività (slope) per ogni soggetto
+slopes_df <- df2 %>%
+  dplyr::filter(!is.na(neg_aff_ema), !is.na(context_threat)) %>%
+  group_by(user_id) %>%
+  dplyr::filter(n() >= 5) %>%  # almeno 5 osservazioni per stimare una retta
+  nest() %>%
+  mutate(
+    model = map(data, ~ lm(neg_aff_ema ~ context_threat, data = .x)),
+    slope = map_dbl(model, ~ coef(.x)["context_threat"]),
+    intercept = map_dbl(model, ~ coef(.x)["(Intercept)"])
+  ) %>%
+  dplyr::select(user_id, slope, intercept)
+
+```
+
+### Step 2: Unione con i tratti PID-5
+
+```{r}
+# Crea tabella con predittori stabili (PID-5)
+predictors_df <- df2 %>%
+  group_by(user_id) %>%
+  summarise(
+    pid5_na = first(pid5_negative_affectivity),
+    pid5_det = first(pid5_detachment),
+    pid5_ant = first(pid5_antagonism),
+    pid5_dis = first(pid5_disinhibition),
+    pid5_psy = first(pid5_psychoticism)
+  )
+
+# Merge
+final_df <- slopes_df %>%
+  left_join(predictors_df, by = "user_id") %>%
+  drop_na()
+
+final_df <- final_df %>% ungroup()
+```
+
+### Step 3: Modello che predice la reattività dalle dimensioni PID-5
+
+```{r}
+# Standardizza le variabili per comparabilità
+final_df_scaled <- final_df %>%
+  mutate(
+    slope_z     = as.vector(scale(slope)),
+    pid5_na_z   = as.vector(scale(pid5_na)),
+    pid5_det_z  = as.vector(scale(pid5_det)),
+    pid5_ant_z  = as.vector(scale(pid5_ant)),
+    pid5_dis_z  = as.vector(scale(pid5_dis)),
+    pid5_psy_z  = as.vector(scale(pid5_psy))
+  )
+
+# Regressione lineare classica
+mod_reactivity <- lm(slope ~ pid5_na + pid5_det + pid5_ant + pid5_dis + pid5_psy,
+                     data = final_df_scaled)
+
+summary(mod_reactivity)
+```
+
+I tratti PID-5 non predicono in modo sistematico quanto l’affetto negativo di un soggetto cambia in funzione dello stress percepito
+
+La reattività affettiva allo stress non è ben spiegata da tratti patologici stabili.
+
+Consideriamo ora la seguente domanda: La reattività emotiva (slope tra affetto negativo e stress percepito) è meglio spiegata da fluttuazioni momentanee dei tratti rispetto alle loro versioni stabili.
+
+Obiettivo: Testare se le medie EMA dei tratti PID-5, calcolate per ciascun soggetto, spiegano meglio la reattività affettiva (slope individuale) rispetto alle versioni standard.
+
+```{r}
+pid5_ema_means <- df2 %>%
+  group_by(user_id) %>%
+  summarise(across(starts_with("pid5_") & where(is.numeric), ~ mean(.x, na.rm = TRUE), 
+                   .names = "{.col}_ema"))
+```
+
+```{r}
+final_df_ema <- final_df %>%
+  left_join(pid5_ema_means, by = "user_id") %>%
+  ungroup()
+```
+
+```{r}
+mod_ema <- lm(slope ~ pid5_negative_affectivity_ema + pid5_detachment_ema +
+                        pid5_antagonism_ema + pid5_disinhibition_ema +
+                        pid5_psychoticism_ema,
+              data = final_df_ema)
+
+summary(mod_ema)
+```
+
+
+```{r}
+mod_both <- lm(slope ~ pid5_na + pid5_det + pid5_ant + pid5_dis + pid5_psy +
+                        pid5_negative_affectivity_ema + pid5_detachment_ema +
+                        pid5_antagonism_ema + pid5_disinhibition_ema +
+                        pid5_psychoticism_ema,
+               data = final_df_ema)
+
+summary(mod_both)
+```
+
+
+```{r}
+# Unisci dati stabili + EMA
+final_df_ema <- final_df %>%
+  left_join(pid5_ema_means, by = "user_id") %>%
+  drop_na()  # Elimina eventuali righe incomplete
+```
+
+```{r}
+# Formula: slope ~ tratti stabili + tratti EMA
+form <- bf(
+  slope ~ pid5_na + pid5_det + pid5_ant + pid5_dis + pid5_psy +
+           pid5_negative_affectivity_ema + pid5_detachment_ema +
+           pid5_antagonism_ema + pid5_disinhibition_ema +
+           pid5_psychoticism_ema
+)
+
+# Priors deboli (standardizzati se vuoi standardizzare prima)
+priors <- c(
+  prior(normal(0, 5), class = "b"),         # per i coefficienti
+  prior(normal(0, 10), class = "Intercept"),
+  prior(student_t(3, 0, 10), class = "sigma")
+)
+
+# Modello
+fit_brm <- brm(
+  formula = form,
+  data = final_df_ema,
+  family = gaussian(),
+  prior = priors,
+  chains = 4,
+  cores = 4,
+  iter = 2000,
+  seed = 1234,
+  backend = "cmdstanr"  # se lo usi
+)
+
+```
+
+```{r}
+pp_check(fit_brm)
+```
+
+```{r}
+summary(fit_brm)
+```
+
+```{r}
+bayes_R2(fit_brm)
+```
+
+```{r}
+marginal_effects(fit_brm, effects = "pid5_psy")
+```
+
+```{r}
+marginal_effects(fit_brm, effects = "pid5_antagonism_ema")
+```
+
+
+Questo ti permette di testare se la reattività affettiva (context_threat) è modulata in funzione della psicopatologia momentanea globale.
+
+```{r}
+fit_pid5sum <- brm(
+  neg_aff_ema ~ context_threat * pid5_sum + (1 + context_threat | user_id),
+  data = df2,
+  family = gaussian(),
+  prior = c(
+    prior(normal(0, 1), class = "b"),
+    prior(normal(0, 5), class = "Intercept"),
+    prior(student_t(3, 0, 5), class = "sigma")
+  ),
+  chains = 4, cores = 4, iter = 2000, backend = "cmdstanr",
+  algorithm = "meanfield"
+)
+```
+
+```{r}
+print(fit_pid5sum)
+```
+
+
+```{r}
+bayes_R2(fit_pid5sum)
+```
+
+Individuals who report more momentary psychopathological traits (higher pid5_sum) experience stronger increases in negative affect when faced with threatening contexts.
+This supports the idea that momentary, dynamic PID-5 measures (EMA) are more sensitive to variations in reactivity than static, trait-level measures.
+
+
+```{r}
+fit_pid5domains <- brm(
+  neg_aff_ema ~ context_threat * pid5_negative_affectivity +
+                context_threat * pid5_detachment +
+                context_threat * pid5_antagonism +
+                context_threat * pid5_disinhibition +
+                context_threat * pid5_psychoticism +
+                (1 + context_threat | user_id),
+  data = df2,
+  family = gaussian(),
+  prior = prior(normal(0, 1), class = "b"),
+  chains = 4, cores = 4, iter = 2000, backend = "cmdstanr", 
+  algorithm = "meanfield"
+)
+```
+```{r}
+print(fit_pid5domains)
+```
+
+Interpretation:
+ 
+- Negative affectivity is the strongest predictor of heightened emotional reactivity.
+- Antagonism appears to have a dampening effect — possibly reflecting emotional blunting or interpersonal disengagement.
+- Disinhibition and detachment show moderate/modest increases in reactivity.
+- Psychoticism has no reliable effect in this context.
+
+```{r}
+conditional_effects(fit_pid5sum, effects = "context_threat:pid5_sum")
+```
+
+```{r}
+conditional_effects(fit_pid5domains, effects = "context_threat:pid5_negative_affectivity")
+```
+
+```{r}
+# Calcola LOO per entrambi
+loo_sum <- loo(fit_pid5sum)
+loo_domains <- loo(fit_pid5domains)
+
+# Confronto
+loo_compare(loo_sum, loo_domains)
+```
+
+                elpd_diff se_diff
+fit_pid5domains    0.0       0.0 
+fit_pid5sum     -304.4      43.8 
+
+Quindi, aggregare tutti i domini del PID-5 EMA in un’unica somma maschera informazioni rilevanti sulla reattività emotiva. I cinque domini forniscono informazioni distinte e utili per predire le variazioni di neg_aff_ema in risposta a minacce contestuali.
+
+La scomposizione dei tratti in domini separati permette di osservare pattern differenziali: ad esempio, antagonism mostra un'interazione negativa con context_threat, mentre negative affectivity un’interazione positiva.
+L’effetto aggregato (pid5_sum) non è in grado di riflettere questi pattern divergenti, e per questo risulta predittivamente più debole.
+
+
+```{r}
+bayes_R2(fit_pid5sum)
+bayes_R2(fit_pid5domains)
+```
+
+Le misure dinamiche del PID-5 raccolte tramite EMA, e distinte nei 5 domini, aggiungono potere predittivo sostanziale rispetto alla versione tradizionale del PID-5 somministrata una sola volta.
+
+- Sia in termini di varianza spiegata (Bayes R²) sia in termini predittivi (ELPD), il modello con misure EMA dinamiche e disaggregate risulta superiore.
+
+Implicazioni: 
+
+Questo risultato rafforza l’ipotesi che i tratti maladattivi del PID-5 abbiano una componente dinamica, rilevabile solo attraverso misurazioni ripetute nel tempo.
+I dati EMA non solo replicano l’informazione presente nella misurazione singola, ma la migliorano, catturando la reattività ai contesti reali.
+Questo supporta la visione secondo cui i tratti di personalità maladattivi dovrebbero essere modellati come disposizioni dinamiche, anziché come stati stabili e invarianti.
+
+## COPE EMA
+
+```{r}
+df_common <- df2 %>%
+  filter(!is.na(cope_avoid) & !is.na(cope_prob_or) & 
+         !is.na(cope_social_support) & !is.na(cope_positive_att) & 
+         !is.na(cope_trascendent_or))
+```
+
+
+
+```{r}
+fit_cope <- brm(
+  neg_aff_ema ~ context_threat * cope_avoid +
+                context_threat * cope_prob_or +
+                context_threat * cope_social_support +
+                context_threat * cope_positive_att +
+                context_threat * cope_trascendent_or +
+                (1 + context_threat | user_id),
+  data = df_common,
+  family = gaussian(),
+  prior = prior(normal(0, 1), class = "b"),
+  chains = 4, cores = 4, iter = 2000, backend = "cmdstanr", 
+  algorithm = "meanfield"
+)
+```
+
+```{r}
+print(fit_cope)
+```
+```{r}
+bayes_R2(fit_cope)
+```
+
+```{r}
+fit_pid5domains_common <- brm(
+  neg_aff_ema ~ context_threat * pid5_negative_affectivity +
+                context_threat * pid5_detachment +
+                context_threat * pid5_antagonism +
+                context_threat * pid5_disinhibition +
+                context_threat * pid5_psychoticism +
+                (1 + context_threat | user_id),
+  data = df_common,
+  family = gaussian(),
+  prior = prior(normal(0, 1), class = "b"),
+  backend = "cmdstanr",
+  chains = 4, cores = 4, iter = 2000,
+  algorithm = "meanfield"
+)
+```
+
+```{r}
+loo_pid5 <- loo(fit_pid5domains_common)
+loo_cope <- loo(fit_cope)  # supponendo che questo sia il nome
+
+loo_compare(loo_pid5, loo_cope)
+```
+
+```{r}
+df_common <- df2 %>%
+  filter(
+    !is.na(cope_avoid),
+    !is.na(cope_prob_or),
+    !is.na(cope_social_support),
+    !is.na(cope_positive_att),
+    !is.na(cope_trascendent_or),
+    !is.na(pid5_negative_affectivity),
+    !is.na(pid5_detachment),
+    !is.na(pid5_antagonism),
+    !is.na(pid5_disinhibition),
+    !is.na(pid5_psychoticism),
+    !is.na(neg_aff_ema),
+    !is.na(context_threat)
+  )
+```
+
+```{r}
+fit_pid5domains_common <- brm(
+  neg_aff_ema ~ context_threat * pid5_negative_affectivity +
+                context_threat * pid5_detachment +
+                context_threat * pid5_antagonism +
+                context_threat * pid5_disinhibition +
+                context_threat * pid5_psychoticism +
+                (1 + context_threat | user_id),
+  data = df_common,
+  family = gaussian(),
+  prior = prior(normal(0, 1), class = "b"),
+  chains = 4, cores = 4, iter = 2000, backend = "cmdstanr",
+  algorithm = "meanfield"
+)
+```
+
+```{r}
+fit_cope_common <- brm(
+  neg_aff_ema ~ context_threat * cope_avoid +
+                context_threat * cope_prob_or +
+                context_threat * cope_social_support +
+                context_threat * cope_positive_att +
+                context_threat * cope_trascendent_or +
+                (1 + context_threat | user_id),
+  data = df_common,
+  family = gaussian(),
+  prior = prior(normal(0, 1), class = "b"),
+  chains = 4, cores = 4, iter = 2000, backend = "cmdstanr",
+  algorithm = "meanfield"
+)
+```
+
+```{r}
+loo_pid5 <- loo(fit_pid5domains_common)
+loo_cope <- loo(fit_cope_common)
+
+loo_compare(loo_pid5, loo_cope)
+```
+
+Il modello basato sulle dimensioni dinamiche del PID-5 fornisce una previsione sostanzialmente migliore della reattività emotiva rispetto al modello che utilizza le dimensioni dinamiche del COPE.
+
+Come interpretarlo:
+Il delta ELPD è di circa 2306 punti (con errore standard ~61), a favore del modello PID-5. Questo risultato indica che il modello basato sulle misure EMA dei tratti disfunzionali del PID-5 predice in modo molto più accurato i livelli momentanei di affetto negativo in risposta a un contesto minaccioso, rispetto a un modello basato sulle strategie di coping momentanee.
+In termini bayesiani, questa differenza è molto ampia, ben oltre il margine di incertezza (se_diff = 61.4), suggerendo che la rete di tratti disfunzionali dinamici (come instabilità affettiva, impulsività, ecc.) è più informativa e sensibile rispetto alle strategie consapevoli di fronteggiamento nel cogliere la vulnerabilità momentanea all’affetto negativo.
+
+
+Questi risultati supportano l’idea che le misure EMA dei tratti del PID-5 catturano un’informazione psicologica altamente predittiva della reattività affettiva nel tempo, superiore rispetto a quanto offerto dalle misure EMA delle strategie di coping.
+
+- le misure dinamiche (EMA) non solo aggiungono predittività rispetto ai tratti stabili (come già mostrato prima),
+- ma anche superano strumenti alternativi momentanei (come il COPE EMA) nel predire l’affetto negativo in contesti minacciosi.
+
+
+
+
+### Implicazioni delle misure EMA del PID-5 nella previsione della reattività emotiva
+
+I risultati del presente studio mostrano che le dimensioni momentanee del PID-5 valutate tramite EMA offrono una predizione credibilmente più accurata della reattività emotiva al contesto rispetto ad alternative dinamiche come le strategie di coping misurate con il COPE EMA. Il confronto tra i modelli bayesiani condotto tramite stima dell’Expected Log Predictive Density (ELPD) ha evidenziato una differenza marcata a favore del modello basato sul PID-5 EMA (ΔELPD = 2305.7, SE = 61.4), a parità di osservazioni utilizzate. Questa evidenza suggerisce che le fluttuazioni quotidiane nei tratti disfunzionali (es. affettività negativa, disinibizione, antagonismo) forniscono una finestra privilegiata sulla vulnerabilità emotiva nel contesto ecologico, superando per valore predittivo le strategie cognitive e comportamentali di fronteggiamento riferite nel momento.
+
+Dal punto di vista teorico, questo risultato contribuisce alla letteratura emergente che considera i tratti di personalità non più come caratteristiche stabili e fisses, ma come *pattern dinamici di esperienza e comportamento* che si manifestano e si modulano nel tempo (Wright & Hopwood, 2016; Roche et al., 2022). L’evidenza che le variazioni momentanee nei tratti maladattivi predicono con maggiore accuratezza la reazione emotiva al contesto rispetto a dimensioni funzionali come il coping suggerisce che tali tratti possono essere più prossimi ai processi automatici e affettivi che modulano la risposta immediata a eventi minacciosi.
+
+Dal punto di vista applicativo, i risultati rafforzano l’uso delle valutazioni EMA come strumenti sensibili per identificare soggetti con elevata instabilità emotiva, e potenzialmente a rischio clinico, in modo più tempestivo rispetto alle valutazioni tradizionali basate su somministrazioni singole e retrospettive.
+
+

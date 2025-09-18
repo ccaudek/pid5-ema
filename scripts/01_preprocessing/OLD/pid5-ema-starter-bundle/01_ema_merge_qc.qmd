@@ -1,0 +1,272 @@
+---
+title: "EMA + Scales: Merge & QC"
+subtitle: "Data assembly and quality checks"
+format:
+  html:
+    toc: true
+    toc-location: left
+    code-fold: show
+    df-print: paged
+editor: source
+execute:
+  echo: true
+  warning: true
+  message: true
+---
+
+```{r}
+#| label: setup
+#| include: true
+#| message: false
+#| warning: false
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(here)
+  library(janitor)
+  library(readr)
+  library(rio)
+})
+```
+
+# Paths & inputs
+
+```{r}
+#| label: paths
+# Try default locations; adapt here if your repo differs
+ema_rds_path    <- here::here("data", "raw", "ema", "ema_data_scoring.RDS")
+processed_dir   <- here::here("data", "processed")
+out_dir         <- here::here("data", "processed")
+
+# Sanity: show what's inside processed_dir
+processed_listing <- tibble(path = list.files(processed_dir, full.names = TRUE))
+processed_listing %>% head(20)
+```
+
+# Load EMA data
+
+```{r}
+#| label: load-ema
+stopifnot(file.exists(ema_rds_path))
+ema <- readRDS(ema_rds_path) %>%
+  clean_names()
+
+ema <- ema |> 
+  dplyr::rename(
+    user_id = subj_code
+  )
+
+# Expect a user_id, timestamp(s), etc.
+glimpse(ema)
+```
+
+# Load scale scores
+
+```{r}
+#| label: load-scales
+# Helper robust reader (reads CSV or RDS; returns empty tibble if missing)
+safe_read <- function(path) {
+  if (!file.exists(path)) return(tibble())
+  ext <- tools::file_ext(path)
+  if (tolower(ext) == "rds") {
+    obj <- readRDS(path)
+    return(obj %>% as_tibble())
+  } else {
+    # default to rio to handle csv/tsv/xlsx gracefully
+    obj <- rio::import(path)
+    return(obj %>% as_tibble())
+  }
+}
+
+# Try to detect standard outputs produced by your scripts
+guess_files <- c(
+  "rosenberg_scores.csv",
+  "scs_scores.csv",
+  "tripm_scores.csv",
+  "dass21_scores.csv",
+  "pid5_scores_noEMA.csv",
+  "esi_bf_scores.csv",
+  "ius12_scores.csv"
+)
+
+scale_dfs <- list()
+for (fname in guess_files) {
+  fpath <- file.path(processed_dir, fname)
+  if (file.exists(fpath)) {
+    scale_dfs[[fname]] <- safe_read(fpath) %>% clean_names()
+  }
+}
+
+# If file names differ, try pattern-based discovery
+if (length(scale_dfs) == 0) {
+  message("No guessed files found. Trying pattern-based search...")
+  all_proc <- list.files(processed_dir, full.names = TRUE)
+  patterns <- c("rosenberg", "scs", "tripm", "dass", "pid5", "esi", "ius")
+  for (pat in patterns) {
+    cand <- all_proc[grepl(pat, basename(all_proc), ignore.case = TRUE)]
+    if (length(cand) > 0) {
+      for (f in cand) {
+        key <- basename(f)
+        scale_dfs[[key]] <- safe_read(f) %>% clean_names()
+      }
+    }
+  }
+}
+
+# Standardize: ensure user_id exists and lowercased; remove dup columns if any
+scale_dfs <- lapply(scale_dfs, function(df) {
+  if (!("user_id" %in% names(df))) return(df)
+  df %>% mutate(user_id = tolower(user_id)) %>% distinct()
+})
+
+names(scale_dfs)
+```
+
+# Quick peek: each scale
+
+```{r}
+#| label: peek-scales
+lapply(names(scale_dfs), function(nm) {
+  cat("==== ", nm, " ====
+", sep = "")
+  df <- scale_dfs[[nm]]
+  print(glimpse(df))
+  cat("
+")
+})
+```
+
+# Merge: EMA + scales
+
+```{r}
+#| label: merge
+# Start from EMA (left join all scales by user_id)
+dat <- ema %>% mutate(user_id = tolower(user_id)) %>% distinct()
+
+# Keep track of row counts during joins
+row_counts <- tibble(step = "ema", n = nrow(dat))
+
+for (nm in names(scale_dfs)) {
+  df <- scale_dfs[[nm]]
+  if (!("user_id" %in% names(df))) next
+  # pre-check duplicate user_ids in df
+  dups <- df %>% count(user_id) %>% filter(n > 1)
+  if (nrow(dups) > 0) {
+    message(sprintf("[WARN] %s has duplicate user_id rows; collapsing to first occurrence.", nm))
+    df <- df %>% group_by(user_id) %>% slice(1) %>% ungroup()
+  }
+  before <- nrow(dat)
+  dat <- dat %>% left_join(df, by = "user_id")
+  row_counts <- add_row(row_counts, step = paste0("joined_", nm), n = nrow(dat))
+  if (nrow(dat) != before) {
+    message(sprintf("[INFO] Rows changed after joining %s: %d -> %d", nm, before, nrow(dat)))
+  }
+}
+
+row_counts
+```
+
+# Quality checks
+
+## 1) Duplicate users
+
+```{r}
+#| label: qc-dups
+dups_ema <- ema %>% count(user_id) %>% filter(n > 1)
+dups_ema
+```
+
+## 2) Missingness by scale
+
+```{r}
+#| label: qc-miss
+miss_cols <- names(dat)[!names(dat) %in% names(ema)]  # newly joined scale columns
+miss_summary <- dat %>%
+  summarise(across(all_of(miss_cols), ~ mean(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "pct_missing") %>%
+  arrange(desc(pct_missing))
+
+miss_summary %>% head(30)
+```
+
+## 3) Range checks (per scale)
+
+```{r}
+#| label: qc-range
+# Define expected ranges for some common scales (adjust as needed)
+expected_ranges <- tribble(
+  ~pattern,        ~min_ok, ~max_ok,
+  "rosenberg",        10,     40,
+  "scs_total",        24,     130,   # if 26 items 1..5 reversed where needed
+  "boldness",          0,      57,   # 19 items * max 3
+  "meanness",          0,      57,
+  "dass",              0,      42    # each subscale 0..42 (7 items*0..3*2 if scoring doubled; adapt)
+)
+
+range_check <- function(df, patt, lo, hi) {
+  cols <- names(df)[grepl(patt, names(df), ignore.case = TRUE)]
+  if (length(cols) == 0) return(tibble())
+  out <- df %>% summarise(across(all_of(cols), list(min = ~min(., na.rm=TRUE), max = ~max(., na.rm=TRUE))))
+  out <- out %>% pivot_longer(everything())
+  out <- out %>% separate(name, into=c("var","stat"), sep="(_min|_max)$", extra="merge", fill="right")
+  out <- out %>% mutate(pattern = patt, min_ok = lo, max_ok = hi)
+  out
+}
+
+qc_ranges <- bind_rows(
+  range_check(dat, "rosenberg", 10, 40),
+  range_check(dat, "scs_total|scs_ts", 26, 130),
+  range_check(dat, "boldness", 0, 57),
+  range_check(dat, "meanness", 0, 57),
+  range_check(dat, "dass", 0, 42)
+)
+
+qc_ranges
+```
+
+## 4) Distributions (quick plots)
+
+```{r}
+#| label: plots
+#| fig-cap: "Distributions of scale totals where available"
+# Attempt some common totals if present
+plot_cols <- c("rosenberg_score", "scs_total_score", "boldness", "meanness")
+present <- intersect(plot_cols, names(dat))
+if (length(present) > 0) {
+  for (v in present) {
+    p <- ggplot(dat, aes(x = .data[[v]])) +
+      geom_histogram(bins = 30, na.rm = TRUE) +
+      labs(title = paste("Distribution:", v))
+    print(p)
+  }
+}
+```
+
+# Save merged dataset
+
+```{r}
+#| label: save
+merged_rds <- file.path(out_dir, "ema_plus_scales_merged.RDS")
+merged_csv <- file.path(out_dir, "ema_plus_scales_merged.csv")
+
+saveRDS(dat, merged_rds)
+rio::export(dat, merged_csv)
+
+tibble(output = c(merged_rds, merged_csv))
+```
+
+# (Optional) Compact QC report
+
+```{r}
+#| label: qc-report
+qc_report <- list(
+  rows_after_each_join = row_counts,
+  duplicate_users_in_ema = dups_ema,
+  missingness_summary = miss_summary,
+  range_checks = qc_ranges
+)
+
+# Save as RDS
+qc_path <- file.path(out_dir, "ema_scales_qc_report.RDS")
+saveRDS(qc_report, qc_path)
+qc_path
+```

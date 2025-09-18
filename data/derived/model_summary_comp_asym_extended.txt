@@ -1,0 +1,152 @@
+=== Outcome: comp_asym ===
+
+=== LOO (higher elpd_loo is better; comparable N) ===
+             elpd_diff se_diff
+fit_static    0.0       0.0   
+fit_dynamic  -6.4       3.8   
+fit_combined -6.6       3.9   
+
+Pareto-k > 0.7 (counts):
+$k_s
+[1] 0
+
+$k_d
+[1] 0
+
+$k_c
+[1] 0
+
+
+=== Stacking weights ===
+Method: stacking
+------
+             weight
+fit_static   0.944 
+fit_dynamic  0.025 
+fit_combined 0.031 
+
+=== Bayes R2 ===
+     Estimate  Est.Error       Q2.5      Q97.5
+R2 0.04595328 0.02314114 0.01008599 0.09881229
+    Estimate  Est.Error       Q2.5     Q97.5
+R2 0.1062635 0.03069611 0.05299034 0.1714614
+    Estimate  Est.Error       Q2.5     Q97.5
+R2 0.1547157 0.03431737 0.09071579 0.2239043
+
+=== Horseshoe summaries (posterior means, 89% CI) ===
+
+-- Dynamic (HS) --
+ Family: student 
+  Links: mu = identity; sigma = identity; nu = identity 
+Formula: comp_asym ~ z_pid5_negative_affectivity_baseline_mean + z_pid5_detachment_baseline_mean + z_pid5_antagonism_baseline_mean + z_pid5_disinhibition_baseline_mean + z_pid5_psychoticism_baseline_mean + z_pid5_negative_affectivity_delta_mean + z_pid5_detachment_delta_mean + z_pid5_antagonism_delta_mean + z_pid5_disinhibition_delta_mean + z_pid5_psychoticism_delta_mean + z_pid5_negative_affectivity_baseline_sd + z_pid5_detachment_baseline_sd + z_pid5_antagonism_baseline_sd + z_pid5_disinhibition_baseline_sd + z_pid5_psychoticism_baseline_sd 
+   Data: dmod_all (Number of observations: 207) 
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Regression Coefficients:
+                                          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
+Intercept                                    -0.01      0.03    -0.07     0.05 1.00    13370
+z_pid5_negative_affectivity_baseline_mean    -0.00      0.01    -0.02     0.01 1.00     8344
+z_pid5_detachment_baseline_mean               0.00      0.01    -0.01     0.02 1.00     8934
+z_pid5_antagonism_baseline_mean               0.00      0.01    -0.01     0.03 1.00     7925
+z_pid5_disinhibition_baseline_mean            0.00      0.01    -0.01     0.02 1.00     8512
+z_pid5_psychoticism_baseline_mean             0.01      0.02    -0.01     0.06 1.00     6330
+z_pid5_negative_affectivity_delta_mean       -0.00      0.01    -0.02     0.01 1.00     8114
+z_pid5_detachment_delta_mean                  0.00      0.01    -0.01     0.03 1.00     7782
+z_pid5_antagonism_delta_mean                  0.00      0.01    -0.01     0.01 1.00     8989
+z_pid5_disinhibition_delta_mean               0.00      0.01    -0.01     0.04 1.00     6243
+z_pid5_psychoticism_delta_mean                0.00      0.01    -0.01     0.03 1.00     8097
+z_pid5_negative_affectivity_baseline_sd       0.00      0.01    -0.01     0.02 1.00     8307
+z_pid5_detachment_baseline_sd                -0.00      0.01    -0.02     0.01 1.00     9335
+z_pid5_antagonism_baseline_sd                -0.00      0.01    -0.02     0.01 1.00     8975
+z_pid5_disinhibition_baseline_sd             -0.00      0.01    -0.02     0.01 1.00     8199
+z_pid5_psychoticism_baseline_sd               0.00      0.01    -0.01     0.02 1.00     7714
+                                          Tail_ESS
+Intercept                                     5436
+z_pid5_negative_affectivity_baseline_mean     6615
+z_pid5_detachment_baseline_mean               6476
+z_pid5_antagonism_baseline_mean               6781
+z_pid5_disinhibition_baseline_mean            6897
+z_pid5_psychoticism_baseline_mean             6044
+z_pid5_negative_affectivity_delta_mean        6565
+z_pid5_detachment_delta_mean                  6863
+z_pid5_antagonism_delta_mean                  6737
+z_pid5_disinhibition_delta_mean               5727
+z_pid5_psychoticism_delta_mean                6377
+z_pid5_negative_affectivity_baseline_sd       6095
+z_pid5_detachment_baseline_sd                 6903
+z_pid5_antagonism_baseline_sd                 6815
+z_pid5_disinhibition_baseline_sd              6423
+z_pid5_psychoticism_baseline_sd               6820
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.42      0.04     0.35     0.49 1.00     6502     5614
+nu        7.95      4.71     3.34    20.55 1.00     6232     5327
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).
+
+-- Combined (HS) --
+ Family: student 
+  Links: mu = identity; sigma = identity; nu = identity 
+Formula: comp_asym ~ z_domain_negative_affect + z_domain_detachment + z_domain_antagonism + z_domain_disinhibition + z_domain_psychoticism + z_pid5_negative_affectivity_baseline_mean + z_pid5_detachment_baseline_mean + z_pid5_antagonism_baseline_mean + z_pid5_disinhibition_baseline_mean + z_pid5_psychoticism_baseline_mean + z_pid5_negative_affectivity_delta_mean + z_pid5_detachment_delta_mean + z_pid5_antagonism_delta_mean + z_pid5_disinhibition_delta_mean + z_pid5_psychoticism_delta_mean + z_pid5_negative_affectivity_baseline_sd + z_pid5_detachment_baseline_sd + z_pid5_antagonism_baseline_sd + z_pid5_disinhibition_baseline_sd + z_pid5_psychoticism_baseline_sd 
+   Data: dmod_all (Number of observations: 207) 
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Regression Coefficients:
+                                          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
+Intercept                                    -0.01      0.03    -0.07     0.06 1.00    13450
+z_domain_negative_affect                      0.00      0.01    -0.01     0.03 1.00     6535
+z_domain_detachment                          -0.00      0.01    -0.02     0.01 1.00     6712
+z_domain_antagonism                          -0.00      0.01    -0.02     0.01 1.00     9390
+z_domain_disinhibition                        0.00      0.01    -0.01     0.02 1.00     7258
+z_domain_psychoticism                         0.00      0.01    -0.01     0.04 1.00     5576
+z_pid5_negative_affectivity_baseline_mean    -0.00      0.01    -0.02     0.01 1.00     7528
+z_pid5_detachment_baseline_mean               0.00      0.01    -0.01     0.02 1.00     8523
+z_pid5_antagonism_baseline_mean               0.00      0.01    -0.01     0.03 1.00     3147
+z_pid5_disinhibition_baseline_mean            0.00      0.01    -0.01     0.02 1.00     6869
+z_pid5_psychoticism_baseline_mean             0.00      0.02    -0.01     0.06 1.00     2340
+z_pid5_negative_affectivity_delta_mean       -0.00      0.01    -0.02     0.01 1.00     8640
+z_pid5_detachment_delta_mean                  0.00      0.01    -0.01     0.03 1.00     8233
+z_pid5_antagonism_delta_mean                  0.00      0.01    -0.01     0.01 1.00     7696
+z_pid5_disinhibition_delta_mean               0.00      0.01    -0.01     0.04 1.00     3878
+z_pid5_psychoticism_delta_mean                0.00      0.01    -0.01     0.02 1.00     5152
+z_pid5_negative_affectivity_baseline_sd       0.00      0.01    -0.01     0.03 1.00     3666
+z_pid5_detachment_baseline_sd                -0.00      0.01    -0.01     0.01 1.00     6111
+z_pid5_antagonism_baseline_sd                -0.00      0.01    -0.02     0.01 1.00     8808
+z_pid5_disinhibition_baseline_sd             -0.00      0.01    -0.01     0.01 1.00     5071
+z_pid5_psychoticism_baseline_sd               0.00      0.01    -0.01     0.02 1.00     7690
+                                          Tail_ESS
+Intercept                                     5779
+z_domain_negative_affect                      6555
+z_domain_detachment                           6868
+z_domain_antagonism                           7197
+z_domain_disinhibition                        6020
+z_domain_psychoticism                         5714
+z_pid5_negative_affectivity_baseline_mean     6303
+z_pid5_detachment_baseline_mean               6722
+z_pid5_antagonism_baseline_mean               1100
+z_pid5_disinhibition_baseline_mean            6417
+z_pid5_psychoticism_baseline_mean              572
+z_pid5_negative_affectivity_delta_mean        5823
+z_pid5_detachment_delta_mean                  6737
+z_pid5_antagonism_delta_mean                  6954
+z_pid5_disinhibition_delta_mean               1676
+z_pid5_psychoticism_delta_mean                6597
+z_pid5_negative_affectivity_baseline_sd       1599
+z_pid5_detachment_baseline_sd                 6935
+z_pid5_antagonism_baseline_sd                 6355
+z_pid5_disinhibition_baseline_sd              6480
+z_pid5_psychoticism_baseline_sd               6778
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.42      0.04     0.35     0.49 1.00     8896     6156
+nu        7.95      4.68     3.39    19.94 1.00     9612     5361
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).

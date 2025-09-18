@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>EMA + Scales: Merge &amp; QC</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="01_ema_merge_qc_files/libs/clipboard/clipboard.min.js"></script>
+<script src="01_ema_merge_qc_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="01_ema_merge_qc_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="01_ema_merge_qc_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="01_ema_merge_qc_files/libs/quarto-html/popper.min.js"></script>
+<script src="01_ema_merge_qc_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="01_ema_merge_qc_files/libs/quarto-html/anchor.min.js"></script>
+<link href="01_ema_merge_qc_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="01_ema_merge_qc_files/libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="01_ema_merge_qc_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="01_ema_merge_qc_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="01_ema_merge_qc_files/libs/bootstrap/bootstrap-d6a003b94517c951b2d65075d42fb01b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="01_ema_merge_qc_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+<script src="01_ema_merge_qc_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#paths-inputs" id="toc-paths-inputs" class="nav-link active" data-scroll-target="#paths-inputs">Paths &amp; inputs</a></li>
+  <li><a href="#load-ema-data" id="toc-load-ema-data" class="nav-link" data-scroll-target="#load-ema-data">Load EMA data</a></li>
+  <li><a href="#load-scale-scores" id="toc-load-scale-scores" class="nav-link" data-scroll-target="#load-scale-scores">Load scale scores</a></li>
+  <li><a href="#quick-peek-each-scale" id="toc-quick-peek-each-scale" class="nav-link" data-scroll-target="#quick-peek-each-scale">Quick peek: each scale</a></li>
+  <li><a href="#merge-ema-scales" id="toc-merge-ema-scales" class="nav-link" data-scroll-target="#merge-ema-scales">Merge: EMA + scales</a></li>
+  <li><a href="#quality-checks" id="toc-quality-checks" class="nav-link" data-scroll-target="#quality-checks">Quality checks</a>
+  <ul class="collapse">
+  <li><a href="#duplicate-users" id="toc-duplicate-users" class="nav-link" data-scroll-target="#duplicate-users">1) Duplicate users</a></li>
+  <li><a href="#missingness-by-scale" id="toc-missingness-by-scale" class="nav-link" data-scroll-target="#missingness-by-scale">2) Missingness by scale</a></li>
+  <li><a href="#range-checks-per-scale" id="toc-range-checks-per-scale" class="nav-link" data-scroll-target="#range-checks-per-scale">3) Range checks (per scale)</a></li>
+  <li><a href="#distributions-quick-plots" id="toc-distributions-quick-plots" class="nav-link" data-scroll-target="#distributions-quick-plots">4) Distributions (quick plots)</a></li>
+  </ul></li>
+  <li><a href="#save-merged-dataset" id="toc-save-merged-dataset" class="nav-link" data-scroll-target="#save-merged-dataset">Save merged dataset</a></li>
+  <li><a href="#optional-compact-qc-report" id="toc-optional-compact-qc-report" class="nav-link" data-scroll-target="#optional-compact-qc-report">(Optional) Compact QC report</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">EMA + Scales: Merge &amp; QC</h1>
+<p class="subtitle lead">Data assembly and quality checks</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(here)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(janitor)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(readr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(rio)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<section id="paths-inputs" class="level1">
+<h1>Paths &amp; inputs</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Try default locations; adapt here if your repo differs</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ema_rds_path    <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"ema"</span>, <span class="st">"ema_data_scoring.RDS"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>processed_dir   <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"processed"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>out_dir         <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"processed"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Sanity: show what's inside processed_dir</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>processed_listing <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">path =</span> <span class="fu">list.files</span>(processed_dir, <span class="at">full.names =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>processed_listing <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">20</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["path"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/acustic"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/dass21_scores.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/data_dictionary.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_plus_baseline_exam_tagged_20250916.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_plus_baseline_exam_tagged.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_plus_scales_merged.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_plus_scales_merged.RDS"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_scales_qc_report.RDS"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/esi_bf_scores.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ius12_scores.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/OLD"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/pid5_scores_noEMA.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/pid5_scores.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/rosenberg_scores.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/scs_scores.csv"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/tripm_scores.csv"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="load-ema-data" class="level1">
+<h1>Load EMA data</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">file.exists</span>(ema_rds_path))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ema <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(ema_rds_path) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ema <span class="ot">&lt;-</span> ema <span class="sc">|&gt;</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">user_id =</span> subj_code</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Expect a user_id, timestamp(s), etc.</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(ema)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 13,627
+Columns: 83
+$ happy                     &lt;dbl&gt; 56, 100, 100, 100, 100, 100, 88, 68, 100, 10…
+$ sad                       &lt;dbl&gt; 11, 0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 4, 0, 0…
+$ satisfied                 &lt;dbl&gt; 72, 100, 0, 100, 0, 0, 33, 50, 100, 100, 100…
+$ angry                     &lt;dbl&gt; 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ pid5_13                   &lt;dbl&gt; 0, 1, 2, 2, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1,…
+$ pid5_15                   &lt;dbl&gt; 2, 1, 0, 2, 2, 2, 1, 1, 1, 3, 0, 1, 0, 1, 1,…
+$ pid5_11                   &lt;dbl&gt; 0, 1, 0, 0, 1, 1, 0, 0, 0, 2, 0, 0, 0, 1, 2,…
+$ pid5_3                    &lt;dbl&gt; 3, 3, 1, 3, 2, 3, 2, 2, 2, 2, 2, 1, 2, 2, 2,…
+$ pid5_2                    &lt;dbl&gt; 2, 2, 3, 2, 3, 2, 1, 2, 1, 2, 0, 0, 0, 1, 1,…
+$ pid5_7                    &lt;dbl&gt; 2, 2, 3, 3, 2, 3, 2, 2, 2, 1, 2, 2, 2, 2, 2,…
+$ pid5_14                   &lt;dbl&gt; 2, 3, 0, 3, 3, 3, 3, 3, 3, 2, 3, 1, 2, 2, 1,…
+$ pid5_6                    &lt;dbl&gt; 1, 1, 3, 1, 1, 1, 0, 0, 0, 2, 0, 0, 0, 0, 2,…
+$ pid5_4                    &lt;dbl&gt; 0, 0, 3, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2,…
+$ pid5_12                   &lt;dbl&gt; 0, 0, 1, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,…
+$ pid5_1                    &lt;dbl&gt; 3, 2, 2, 0, 3, 1, 0, 0, 1, 2, 0, 0, 0, 0, 1,…
+$ pid5_9                    &lt;dbl&gt; 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2,…
+$ pid5_5                    &lt;dbl&gt; 0, 1, 2, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,…
+$ pid5_8                    &lt;dbl&gt; 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 2,…
+$ pid5_10                   &lt;dbl&gt; 0, 2, 1, 1, 2, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0,…
+$ tripm_1                   &lt;dbl&gt; 3, 3, 2, 4, 3, 3, 1, 2, 4, 2, 4, 3, 3, 3, 2,…
+$ tripm_3                   &lt;dbl&gt; 1, 1, 2, 1, 2, 1, 1, 1, 1, 2, 4, 1, 1, 2, 2,…
+$ tripm_2                   &lt;dbl&gt; 3, 4, 4, 4, 3, 3, 3, 3, 3, 2, 4, 4, 3, 4, 2,…
+$ tripm_4                   &lt;dbl&gt; 3, 4, 3, 4, 3, 4, 3, 3, 4, 3, 4, 3, 3, 3, 4,…
+$ dass21_2                  &lt;dbl&gt; 2, NA, 3, NA, 2, NA, NA, 0, 1, NA, 0, 0, NA,…
+$ dass21_5                  &lt;dbl&gt; 0, NA, 2, NA, 2, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ dass21_3                  &lt;dbl&gt; 1, NA, 2, NA, 1, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ dass21_4                  &lt;dbl&gt; 0, NA, 3, NA, 2, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ dass21_6                  &lt;dbl&gt; 0, NA, 2, NA, 1, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ dass21_1                  &lt;dbl&gt; 2, NA, 1, NA, 3, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ scs3_pos                  &lt;dbl&gt; 2, NA, -1, NA, 1, NA, NA, 2, 2, NA, 2, 2, NA…
+$ scs5_neg                  &lt;dbl&gt; -2, NA, 2, NA, 2, NA, NA, -3, -3, NA, -3, -3…
+$ scs7_pos                  &lt;dbl&gt; 3, NA, 2, NA, 1, NA, NA, 2, 3, NA, -3, 2, NA…
+$ scs4_neg                  &lt;dbl&gt; 1, NA, 2, NA, -2, NA, NA, 2, -1, NA, -3, -3,…
+$ scs2_neg                  &lt;dbl&gt; -2, NA, 1, NA, 2, NA, NA, -3, -3, NA, -3, -3…
+$ scs1_pos                  &lt;dbl&gt; 3, NA, 3, NA, -2, NA, NA, 3, 2, NA, 2, 2, NA…
+$ scs8_neg                  &lt;dbl&gt; 2, NA, 3, NA, 1, NA, NA, 2, -2, NA, 1, 1, NA…
+$ scs6_pos                  &lt;dbl&gt; 3, NA, -1, NA, 1, NA, NA, 1, 2, NA, 3, 1, NA…
+$ vq_2                      &lt;dbl&gt; NA, 1, NA, 0, NA, 0, 0, 0, 0, 0, NA, NA, 0, …
+$ vq_1                      &lt;dbl&gt; NA, 0, NA, 0, NA, 0, 0, 0, 0, 0, NA, NA, 0, …
+$ vq_4                      &lt;dbl&gt; NA, 0, NA, 0, NA, 0, 0, 0, 0, 0, NA, NA, 0, …
+$ vq_3                      &lt;dbl&gt; NA, 0, NA, 0, NA, 0, 0, 0, 0, 2, NA, NA, 0, …
+$ cope_nvi_2                &lt;dbl&gt; NA, 2, NA, 1, NA, 1, 1, 1, 1, 1, NA, NA, 1, …
+$ cope_nvi_7                &lt;dbl&gt; NA, 4, NA, 4, NA, 3, 4, 3, 4, 4, NA, NA, 4, …
+$ cope_nvi_5                &lt;dbl&gt; NA, 4, NA, 3, NA, 3, 3, 3, 4, 3, NA, NA, 4, …
+$ cope_nvi_8                &lt;dbl&gt; NA, 4, NA, 4, NA, 4, 4, 4, 4, 3, NA, NA, 4, …
+$ cope_nvi_9                &lt;dbl&gt; NA, 1, NA, 1, NA, 1, 1, 1, 1, 1, NA, NA, 1, …
+$ cope_nvi_10               &lt;dbl&gt; NA, 4, NA, 2, NA, 2, 4, 3, 3, 3, NA, NA, 3, …
+$ cope_nvi_1                &lt;dbl&gt; NA, 1, NA, 1, NA, 1, 1, 1, 1, 1, NA, NA, 1, …
+$ cope_nvi_3                &lt;dbl&gt; NA, 4, NA, 4, NA, 3, 4, 4, 3, 3, NA, NA, 4, …
+$ cope_nvi_4                &lt;dbl&gt; NA, 4, NA, 3, NA, 3, 3, 3, 4, 4, NA, NA, 4, …
+$ cope_nvi_6                &lt;dbl&gt; NA, 4, NA, 3, NA, 3, 4, 3, 4, 4, NA, NA, 4, …
+$ user_id                   &lt;chr&gt; "@jjha4", "@jjha4", "@jjha4", "@jjha4", "@jj…
+$ day                       &lt;date&gt; 2025-03-22, 2025-03-26, 2025-03-29, 2025-04…
+$ hour                      &lt;int&gt; 9, 18, 9, 18, 13, 18, 19, 19, 20, 12, 13, 10…
+$ calendar_day              &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13…
+$ bysubj_day                &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13…
+$ context_quality           &lt;dbl&gt; 1, 2, 2, 2, 2, 1, 1, 1, 2, 0, 1, 0, 0, 1, 1,…
+$ context_control           &lt;dbl&gt; 4, 3, 5, 4, 3, 3, 4, 4, 4, 3, 4, 0, 1, 4, 2,…
+$ context_support           &lt;dbl&gt; 5, 5, NA, 5, 4, 5, 5, 4, 4, 4, 5, 4, 4, 5, 1…
+$ context_threat            &lt;dbl&gt; 2, 1, 3, 4, 3, 1, 1, 2, 1, 1, 0, 1, 2, 0, 4,…
+$ pid5_sum                  &lt;dbl&gt; 15, 19, 24, 17, 25, 19, 9, 10, 11, 23, 8, 5,…
+$ pid5_negative_affectivity &lt;dbl&gt; 8, 7, 6, 5, 8, 6, 3, 4, 4, 6, 2, 1, 2, 3, 4,…
+$ pid5_detachment           &lt;dbl&gt; 1, 2, 8, 1, 4, 1, 0, 0, 0, 4, 0, 0, 0, 0, 5,…
+$ pid5_antagonism           &lt;dbl&gt; 2, 2, 6, 3, 2, 3, 2, 2, 2, 5, 2, 2, 2, 2, 6,…
+$ pid5_disinhibition        &lt;dbl&gt; 0, 3, 2, 1, 6, 3, 0, 0, 0, 3, 1, 0, 1, 1, 3,…
+$ pid5_psychoticism         &lt;dbl&gt; 4, 5, 2, 7, 5, 6, 4, 4, 5, 5, 3, 2, 3, 4, 3,…
+$ ipv_sum                   &lt;dbl&gt; NA, 1, NA, 0, NA, 0, 0, 0, 0, 2, NA, NA, 0, …
+$ tripm_4_rev               &lt;dbl&gt; 2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 2, 2, 1,…
+$ tripm_sum                 &lt;dbl&gt; 10, 12, 11, 13, 11, 11, 8, 9, 12, 9, 16, 11,…
+$ tripm_boldness            &lt;dbl&gt; 6, 7, 6, 8, 6, 6, 4, 5, 7, 4, 8, 7, 6, 7, 4,…
+$ tripm_meanness            &lt;dbl&gt; 3, 2, 4, 2, 4, 2, 3, 3, 2, 4, 5, 3, 3, 4, 3,…
+$ dass_sum                  &lt;dbl&gt; 5, NA, 13, NA, 11, NA, NA, 0, 1, NA, 0, 0, N…
+$ dass_stress               &lt;dbl&gt; 4, NA, 4, NA, 5, NA, NA, 0, 1, NA, 0, 0, NA,…
+$ dass_depression           &lt;dbl&gt; 1, NA, 5, NA, 3, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ dass_anxiety              &lt;dbl&gt; 0, NA, 4, NA, 3, NA, NA, 0, 0, NA, 0, 0, NA,…
+$ cope_10_rev               &lt;dbl&gt; NA, 1, NA, 3, NA, 3, 1, 2, 2, 2, NA, NA, 2, …
+$ cope_avoid                &lt;dbl&gt; NA, 3, NA, 2, NA, 2, 2, 2, 2, 2, NA, NA, 2, …
+$ cope_prob_or              &lt;dbl&gt; NA, 8, NA, 7, NA, 6, 7, 7, 7, 7, NA, NA, 8, …
+$ cope_social_support       &lt;dbl&gt; NA, 8, NA, 6, NA, 6, 7, 6, 8, 7, NA, NA, 8, …
+$ cope_positive_att         &lt;dbl&gt; NA, 8, NA, 8, NA, 7, 8, 7, 8, 7, NA, NA, 8, …
+$ cope_trascendent_or       &lt;dbl&gt; NA, 2, NA, 4, NA, 4, 2, 3, 3, 3, NA, NA, 3, …
+$ cs_pos                    &lt;dbl&gt; 11, NA, 3, NA, 1, NA, NA, 8, 9, NA, 4, 7, NA…
+$ ucs_neg                   &lt;dbl&gt; -1, NA, 8, NA, 3, NA, NA, -2, -9, NA, -8, -8…</code></pre>
+</div>
+</div>
+</section>
+<section id="load-scale-scores" class="level1">
+<h1>Load scale scores</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper robust reader (reads CSV or RDS; returns empty tibble if missing)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>safe_read <span class="ot">&lt;-</span> <span class="cf">function</span>(path) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(path)) <span class="fu">return</span>(<span class="fu">tibble</span>())</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  ext <span class="ot">&lt;-</span> tools<span class="sc">::</span><span class="fu">file_ext</span>(path)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">tolower</span>(ext) <span class="sc">==</span> <span class="st">"rds"</span>) {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    obj <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(path)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(obj <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>())</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># default to rio to handle csv/tsv/xlsx gracefully</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    obj <span class="ot">&lt;-</span> rio<span class="sc">::</span><span class="fu">import</span>(path)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(obj <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>())</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Try to detect standard outputs produced by your scripts</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>guess_files <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">"rosenberg_scores.csv"</span>,</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="st">"scs_scores.csv"</span>,</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="st">"tripm_scores.csv"</span>,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="st">"dass21_scores.csv"</span>,</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="st">"pid5_scores_noEMA.csv"</span>,</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="st">"esi_bf_scores.csv"</span>,</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="st">"ius12_scores.csv"</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>scale_dfs <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (fname <span class="cf">in</span> guess_files) {</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  fpath <span class="ot">&lt;-</span> <span class="fu">file.path</span>(processed_dir, fname)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">file.exists</span>(fpath)) {</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    scale_dfs[[fname]] <span class="ot">&lt;-</span> <span class="fu">safe_read</span>(fpath) <span class="sc">%&gt;%</span> <span class="fu">clean_names</span>()</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="co"># If file names differ, try pattern-based discovery</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(scale_dfs) <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">message</span>(<span class="st">"No guessed files found. Trying pattern-based search..."</span>)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  all_proc <span class="ot">&lt;-</span> <span class="fu">list.files</span>(processed_dir, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  patterns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"rosenberg"</span>, <span class="st">"scs"</span>, <span class="st">"tripm"</span>, <span class="st">"dass"</span>, <span class="st">"pid5"</span>, <span class="st">"esi"</span>, <span class="st">"ius"</span>)</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (pat <span class="cf">in</span> patterns) {</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    cand <span class="ot">&lt;-</span> all_proc[<span class="fu">grepl</span>(pat, <span class="fu">basename</span>(all_proc), <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)]</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(cand) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (f <span class="cf">in</span> cand) {</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>        key <span class="ot">&lt;-</span> <span class="fu">basename</span>(f)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>        scale_dfs[[key]] <span class="ot">&lt;-</span> <span class="fu">safe_read</span>(f) <span class="sc">%&gt;%</span> <span class="fu">clean_names</span>()</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Standardize: ensure user_id exists and lowercased; remove dup columns if any</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>scale_dfs <span class="ot">&lt;-</span> <span class="fu">lapply</span>(scale_dfs, <span class="cf">function</span>(df) {</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(<span class="st">"user_id"</span> <span class="sc">%in%</span> <span class="fu">names</span>(df))) <span class="fu">return</span>(df)</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">user_id =</span> <span class="fu">tolower</span>(user_id)) <span class="sc">%&gt;%</span> <span class="fu">distinct</span>()</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(scale_dfs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "rosenberg_scores.csv"  "scs_scores.csv"        "tripm_scores.csv"     
+[4] "dass21_scores.csv"     "pid5_scores_noEMA.csv" "esi_bf_scores.csv"    
+[7] "ius12_scores.csv"     </code></pre>
+</div>
+</div>
+</section>
+<section id="quick-peek-each-scale" class="level1">
+<h1>Quick peek: each scale</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(<span class="fu">names</span>(scale_dfs), <span class="cf">function</span>(nm) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"==== "</span>, nm, <span class="st">" ====</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="st">"</span>, <span class="at">sep =</span> <span class="st">""</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> scale_dfs[[nm]]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">glimpse</span>(df))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="st">"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>==== rosenberg_scores.csv ====
+Rows: 542
+Columns: 2
+$ user_id                  &lt;chr&gt; "sa_la_2002_11_29_127", "fr_pu_2003_05_28_252…
+$ rosenberg_score_baseline &lt;int&gt; 29, 21, 29, 33, 38, 27, 23, 30, 34, 29, 34, 2…
+# A tibble: 542 × 2
+   user_id              rosenberg_score_baseline
+   &lt;chr&gt;                                   &lt;int&gt;
+ 1 sa_la_2002_11_29_127                       29
+ 2 fr_pu_2003_05_28_252                       21
+ 3 ma_lo_2003_03_20_086                       29
+ 4 gi_lo_2003_10_04_373                       33
+ 5 lu_se_2004_01_02_817                       38
+ 6 fr_re_2003_08_05_534                       27
+ 7 al_ri_2003_12_18_138                       23
+ 8 as_gr_2003_07_14_024                       30
+ 9 ma_no_2003_08_08_723                       34
+10 el_ma_2002_02_23_664                       29
+# ℹ 532 more rows
+
+==== scs_scores.csv ====
+Rows: 544
+Columns: 8
+$ user_id                      &lt;chr&gt; "sa_la_2002_11_29_127", "fr_pu_2003_05_28…
+$ self_kindness_baseline       &lt;int&gt; 9, 7, 12, 17, 14, 10, 5, 12, 18, 15, 20, …
+$ common_humanity_baseline     &lt;int&gt; 9, 8, 9, 14, 14, 8, 5, 11, 12, 14, 16, 8,…
+$ mindfulness_baseline         &lt;int&gt; 6, 8, 13, 14, 12, 9, 5, 12, 12, 12, 14, 8…
+$ self_judgment_baseline       &lt;int&gt; 21, 23, 18, 16, 19, 20, 20, 19, 19, 12, 1…
+$ isolation_baseline           &lt;int&gt; 16, 18, 17, 13, 12, 19, 13, 19, 9, 10, 11…
+$ over_identification_baseline &lt;int&gt; 19, 18, 14, 12, 16, 18, 13, 15, 13, 10, 7…
+$ scs_total_score_baseline     &lt;int&gt; 46, 42, 63, 82, 71, 48, 47, 60, 79, 87, 1…
+# A tibble: 544 × 8
+   user_id    self_kindness_baseline common_humanity_base…¹ mindfulness_baseline
+   &lt;chr&gt;                       &lt;int&gt;                  &lt;int&gt;                &lt;int&gt;
+ 1 sa_la_200…                      9                      9                    6
+ 2 fr_pu_200…                      7                      8                    8
+ 3 ma_lo_200…                     12                      9                   13
+ 4 gi_lo_200…                     17                     14                   14
+ 5 lu_se_200…                     14                     14                   12
+ 6 fr_re_200…                     10                      8                    9
+ 7 al_ri_200…                      5                      5                    5
+ 8 as_gr_200…                     12                     11                   12
+ 9 ma_no_200…                     18                     12                   12
+10 el_ma_200…                     15                     14                   12
+# ℹ 534 more rows
+# ℹ abbreviated name: ¹​common_humanity_baseline
+# ℹ 4 more variables: self_judgment_baseline &lt;int&gt;, isolation_baseline &lt;int&gt;,
+#   over_identification_baseline &lt;int&gt;, scs_total_score_baseline &lt;int&gt;
+
+==== tripm_scores.csv ====
+Rows: 544
+Columns: 3
+$ user_id           &lt;chr&gt; "sa_la_2002_11_29_127", "fr_pu_2003_05_28_252", "ma_…
+$ boldness_baseline &lt;int&gt; 23, 31, 28, 28, 36, 13, 15, 35, 21, 16, 31, 25, 30, …
+$ meanness_baseline &lt;int&gt; 8, 25, 19, 3, 19, 8, 14, 9, 3, 1, 3, 7, 13, 10, 24, …
+# A tibble: 544 × 3
+   user_id              boldness_baseline meanness_baseline
+   &lt;chr&gt;                            &lt;int&gt;             &lt;int&gt;
+ 1 sa_la_2002_11_29_127                23                 8
+ 2 fr_pu_2003_05_28_252                31                25
+ 3 ma_lo_2003_03_20_086                28                19
+ 4 gi_lo_2003_10_04_373                28                 3
+ 5 lu_se_2004_01_02_817                36                19
+ 6 fr_re_2003_08_05_534                13                 8
+ 7 al_ri_2003_12_18_138                15                14
+ 8 as_gr_2003_07_14_024                35                 9
+ 9 ma_no_2003_08_08_723                21                 3
+10 el_ma_2002_02_23_664                16                 1
+# ℹ 534 more rows
+
+==== dass21_scores.csv ====
+Rows: 543
+Columns: 4
+$ user_id                  &lt;chr&gt; "sa_la_2002_11_29_127", "fr_pu_2003_05_28_252…
+$ dass_stress_baseline     &lt;int&gt; 14, 17, 10, 5, 5, 4, 8, 12, 6, 6, 4, 4, 7, 4,…
+$ dass_anxiety_baseline    &lt;int&gt; 5, 8, 4, 2, 3, 2, 2, 11, 4, 0, 4, 1, 5, 1, 6,…
+$ dass_depression_baseline &lt;int&gt; 7, 14, 5, 0, 0, 2, 11, 9, 1, 1, 0, 10, 2, 1, …
+# A tibble: 543 × 4
+   user_id     dass_stress_baseline dass_anxiety_baseline dass_depression_base…¹
+   &lt;chr&gt;                      &lt;int&gt;                 &lt;int&gt;                  &lt;int&gt;
+ 1 sa_la_2002…                   14                     5                      7
+ 2 fr_pu_2003…                   17                     8                     14
+ 3 ma_lo_2003…                   10                     4                      5
+ 4 gi_lo_2003…                    5                     2                      0
+ 5 lu_se_2004…                    5                     3                      0
+ 6 fr_re_2003…                    4                     2                      2
+ 7 al_ri_2003…                    8                     2                     11
+ 8 as_gr_2003…                   12                    11                      9
+ 9 ma_no_2003…                    6                     4                      1
+10 el_ma_2002…                    6                     0                      1
+# ℹ 533 more rows
+# ℹ abbreviated name: ¹​dass_depression_baseline
+
+==== pid5_scores_noEMA.csv ====
+Rows: 572
+Columns: 6
+$ user_id                         &lt;chr&gt; "li_se_2005_11_04_636", "ve_st_2004_06…
+$ domain_negative_affect_baseline &lt;int&gt; 16, 15, 34, 21, 29, 6, 24, 21, 21, 12,…
+$ domain_detachment_baseline      &lt;int&gt; 20, 19, 20, 19, 22, 9, 20, 28, 20, 9, …
+$ domain_antagonism_baseline      &lt;int&gt; 9, 12, 15, 10, 23, 11, 22, 16, 14, 8, …
+$ domain_disinhibition_baseline   &lt;int&gt; 16, 11, 22, 18, 25, 13, 30, 17, 15, 10…
+$ domain_psychoticism_baseline    &lt;int&gt; 21, 16, 49, 28, 42, 12, 39, 36, 33, 14…
+# A tibble: 572 × 6
+   user_id  domain_negative_affe…¹ domain_detachment_ba…² domain_antagonism_ba…³
+   &lt;chr&gt;                     &lt;int&gt;                  &lt;int&gt;                  &lt;int&gt;
+ 1 li_se_2…                     16                     20                      9
+ 2 ve_st_2…                     15                     19                     12
+ 3 ma_mo_2…                     34                     20                     15
+ 4 ma_ro_2…                     21                     19                     10
+ 5 ca_mu_2…                     29                     22                     23
+ 6 ma_se_2…                      6                      9                     11
+ 7 sa_ma_2…                     24                     20                     22
+ 8 so_vi_2…                     21                     28                     16
+ 9 li_pi_2…                     21                     20                     14
+10 ma_ro_2…                     12                      9                      8
+# ℹ 562 more rows
+# ℹ abbreviated names: ¹​domain_negative_affect_baseline,
+#   ²​domain_detachment_baseline, ³​domain_antagonism_baseline
+# ℹ 2 more variables: domain_disinhibition_baseline &lt;int&gt;,
+#   domain_psychoticism_baseline &lt;int&gt;
+
+==== esi_bf_scores.csv ====
+Rows: 466
+Columns: 2
+$ user_id         &lt;chr&gt; "an_ra_2004_06_07_770", "si_ma_2003_10_31_940", "az_sa…
+$ esi_bf_baseline &lt;int&gt; 8, 6, 7, 7, 3, 15, 4, 3, 6, 6, 1, 1, 6, 2, 5, 3, 2, 5,…
+# A tibble: 466 × 2
+   user_id              esi_bf_baseline
+   &lt;chr&gt;                          &lt;int&gt;
+ 1 an_ra_2004_06_07_770               8
+ 2 si_ma_2003_10_31_940               6
+ 3 az_sa_2004_04_06_567               7
+ 4 la_pe_2005_12_15_770               7
+ 5 so_ru_2006_02_08_848               3
+ 6 je_le_2005_12_23_699              15
+ 7 lu_ma_2005_11_04_366               4
+ 8 li_pi_2006_03_09_021               3
+ 9 ev_tu_2004_10_06_265               6
+10 ra_pe_2005_02_25_938               6
+# ℹ 456 more rows
+
+==== ius12_scores.csv ====
+Rows: 544
+Columns: 4
+$ user_id                  &lt;chr&gt; "sa_la_2002_11_29_127", "fr_pu_2003_05_28_252…
+$ inhibitory_ius_baseline  &lt;int&gt; 11, 14, 7, 5, 6, 20, 5, 12, 9, 8, 9, 7, 6, 6,…
+$ prospective_ius_baseline &lt;int&gt; 28, 28, 26, 16, 27, 24, 21, 26, 15, 15, 15, 1…
+$ ius_tot_baseline         &lt;int&gt; 39, 42, 33, 21, 33, 44, 26, 38, 24, 23, 24, 2…
+# A tibble: 544 × 4
+   user_id        inhibitory_ius_basel…¹ prospective_ius_base…² ius_tot_baseline
+   &lt;chr&gt;                           &lt;int&gt;                  &lt;int&gt;            &lt;int&gt;
+ 1 sa_la_2002_11…                     11                     28               39
+ 2 fr_pu_2003_05…                     14                     28               42
+ 3 ma_lo_2003_03…                      7                     26               33
+ 4 gi_lo_2003_10…                      5                     16               21
+ 5 lu_se_2004_01…                      6                     27               33
+ 6 fr_re_2003_08…                     20                     24               44
+ 7 al_ri_2003_12…                      5                     21               26
+ 8 as_gr_2003_07…                     12                     26               38
+ 9 ma_no_2003_08…                      9                     15               24
+10 el_ma_2002_02…                      8                     15               23
+# ℹ 534 more rows
+# ℹ abbreviated names: ¹​inhibitory_ius_baseline, ²​prospective_ius_baseline</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+NULL
+
+[[2]]
+NULL
+
+[[3]]
+NULL
+
+[[4]]
+NULL
+
+[[5]]
+NULL
+
+[[6]]
+NULL
+
+[[7]]
+NULL</code></pre>
+</div>
+</div>
+</section>
+<section id="merge-ema-scales" class="level1">
+<h1>Merge: EMA + scales</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start from EMA (left join all scales by user_id)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> ema <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">user_id =</span> <span class="fu">tolower</span>(user_id)) <span class="sc">%&gt;%</span> <span class="fu">distinct</span>()</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep track of row counts during joins</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>row_counts <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">step =</span> <span class="st">"ema"</span>, <span class="at">n =</span> <span class="fu">nrow</span>(dat))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nm <span class="cf">in</span> <span class="fu">names</span>(scale_dfs)) {</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> scale_dfs[[nm]]</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(<span class="st">"user_id"</span> <span class="sc">%in%</span> <span class="fu">names</span>(df))) <span class="cf">next</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># pre-check duplicate user_ids in df</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  dups <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">count</span>(user_id) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(dups) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="fu">sprintf</span>(<span class="st">"[WARN] %s has duplicate user_id rows; collapsing to first occurrence."</span>, nm))</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(user_id) <span class="sc">%&gt;%</span> <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>()</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  before <span class="ot">&lt;-</span> <span class="fu">nrow</span>(dat)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  dat <span class="ot">&lt;-</span> dat <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(df, <span class="at">by =</span> <span class="st">"user_id"</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  row_counts <span class="ot">&lt;-</span> <span class="fu">add_row</span>(row_counts, <span class="at">step =</span> <span class="fu">paste0</span>(<span class="st">"joined_"</span>, nm), <span class="at">n =</span> <span class="fu">nrow</span>(dat))</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(dat) <span class="sc">!=</span> before) {</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="fu">sprintf</span>(<span class="st">"[INFO] Rows changed after joining %s: %d -&gt; %d"</span>, nm, before, <span class="fu">nrow</span>(dat)))</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] rosenberg_scores.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] scs_scores.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] tripm_scores.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] dass21_scores.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] pid5_scores_noEMA.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] esi_bf_scores.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[WARN] ius12_scores.csv has duplicate user_id rows; collapsing to first occurrence.</code></pre>
+</div>
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>row_counts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["step"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"ema","2":"13627"},{"1":"joined_rosenberg_scores.csv","2":"13627"},{"1":"joined_scs_scores.csv","2":"13627"},{"1":"joined_tripm_scores.csv","2":"13627"},{"1":"joined_dass21_scores.csv","2":"13627"},{"1":"joined_pid5_scores_noEMA.csv","2":"13627"},{"1":"joined_esi_bf_scores.csv","2":"13627"},{"1":"joined_ius12_scores.csv","2":"13627"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="quality-checks" class="level1">
+<h1>Quality checks</h1>
+<section id="duplicate-users" class="level2">
+<h2 class="anchored" data-anchor-id="duplicate-users">1) Duplicate users</h2>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dups_ema <span class="ot">&lt;-</span> ema <span class="sc">%&gt;%</span> <span class="fu">count</span>(user_id) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>dups_ema</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["user_id"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"@jjha4","2":"28"},{"1":"ab_be_2003_03_16_101","2":"26"},{"1":"ad_al_2003_06_05_080","2":"23"},{"1":"ad_pa_2006_01_27_630","2":"31"},{"1":"ad_qu_2002_11_13_717","2":"26"},{"1":"af_fr_2003_05_03_695","2":"23"},{"1":"ag_br_2003_11_19_333","2":"25"},{"1":"ag_ce_2003_06_14_325","2":"19"},{"1":"ag_gi_1979_11_16_447","2":"27"},{"1":"ag_nu_2003_07_30_860","2":"26"},{"1":"ag_te_2004_05_26_499","2":"30"},{"1":"al_ba_2003_18_07_905","2":"23"},{"1":"al_be_2002_09_10_525","2":"9"},{"1":"al_bi_2001_12_25_849","2":"23"},{"1":"al_bo_2002_07_25_563","2":"30"},{"1":"al_co_2002_04_12_762","2":"18"},{"1":"al_do_2001_05_27_255","2":"29"},{"1":"al_fi_2003_06_10_591","2":"26"},{"1":"al_fr_2002_08_12_247","2":"26"},{"1":"al_ga_2001_10_28_806","2":"25"},{"1":"al_gi_2002_04_11_416","2":"23"},{"1":"al_lo_1999_09_19_127","2":"31"},{"1":"al_lu_2005_03_13_416","2":"21"},{"1":"al_ma_2001_08_18_846","2":"27"},{"1":"al_ma_2002_01_25_787","2":"26"},{"1":"al_ma_2004_06_15_598","2":"26"},{"1":"al_mi_2004_04_28_724","2":"21"},{"1":"al_mi_2005_02_23_162","2":"30"},{"1":"al_mo_2005_10_03_273","2":"31"},{"1":"al_ne_2005_11_07_247","2":"23"},{"1":"al_pa_2002_12_30_233","2":"12"},{"1":"al_pa_2003_03_21_907","2":"28"},{"1":"al_pa_2004_10_13_241","2":"30"},{"1":"al_pe_2004_02_28_769","2":"9"},{"1":"al_ri_2003_12_18_138","2":"26"},{"1":"al_ro_2005_11_09_715","2":"30"},{"1":"al_sa_2005_08_17_947","2":"26"},{"1":"al_sc_2000_09_09_522","2":"23"},{"1":"al_se_2003_07_28_277","2":"28"},{"1":"al_ti_2003_07_24_080","2":"30"},{"1":"al_ug_2003_04_14_823","2":"30"},{"1":"al_va_2004_12_16_206","2":"24"},{"1":"al_va_2005_12_12_373","2":"30"},{"1":"al_za_2005_07_11_637","2":"31"},{"1":"alessandro","2":"25"},{"1":"alessia","2":"21"},{"1":"alice","2":"24"},{"1":"alino","2":"23"},{"1":"am_an_2003_08_07_806","2":"26"},{"1":"am_or_2005_07_19_155","2":"27"},{"1":"an_an_2002_11_01_439","2":"25"},{"1":"an_ba_2001_12_27_169","2":"31"},{"1":"an_ba_2003_04_19_988","2":"26"},{"1":"an_bi_2001_02_01_958","2":"25"},{"1":"an_bo_1988_08_24_166","2":"26"},{"1":"an_bu_2002_06_06_246","2":"22"},{"1":"an_ca_2002_02_24_956","2":"12"},{"1":"an_ci_2000_03_09_515","2":"28"},{"1":"an_cr_2001_04_09_355","2":"28"},{"1":"an_fi_2001_10_31_313","2":"23"},{"1":"an_ge_2000_11_27_478","2":"12"},{"1":"an_gi_2000_09_02_655","2":"14"},{"1":"an_gr_2003_02_23_266","2":"28"},{"1":"an_la_2004_07_17_186","2":"7"},{"1":"an_lo_1997_06_25_965","2":"25"},{"1":"an_lu_2005_04_26_392","2":"30"},{"1":"an_ma_1995_03_09_029","2":"31"},{"1":"an_mi_2003_08_21_800","2":"27"},{"1":"an_ni_2002_12_04_834","2":"27"},{"1":"an_pa_1999_05_11_680","2":"27"},{"1":"an_pa_2004_10_29_721","2":"24"},{"1":"an_pu_2004_12_28_073","2":"29"},{"1":"an_ra_2004_06_07_770","2":"27"},{"1":"an_so_2003_09_08_620","2":"26"},{"1":"an_st_2005_10_16_052","2":"27"},{"1":"an_ta_1996_10_28_673","2":"30"},{"1":"an_to_2003_08_06_114","2":"26"},{"1":"an_va_2004_04_08_527","2":"4"},{"1":"ar_br_2001_08_21_449","2":"23"},{"1":"ar_la_2004_02_18_282","2":"25"},{"1":"ar_ro_2002_06_16_263","2":"20"},{"1":"ar_sc_2005_06_18_448","2":"6"},{"1":"ar_se_2005_06_30_070","2":"26"},{"1":"arianna","2":"16"},{"1":"as_gr_2000_07_17_648","2":"26"},{"1":"as_gr_2003_07_14_024","2":"26"},{"1":"as_mu_2003_08_08_116","2":"22"},{"1":"as_ri_2004_07_30_783","2":"30"},{"1":"as_si_2005_04_26_447","2":"30"},{"1":"as_sp_2002_07_24_676","2":"20"},{"1":"as_st_2005_11_28_811","2":"30"},{"1":"au_be_2000_06_12_812","2":"24"},{"1":"au_br_2003_07_01_946","2":"8"},{"1":"au_cr_2001_05_09_740","2":"26"},{"1":"au_ma_2003_02_23_142","2":"25"},{"1":"au_ri_2004_02_19_848","2":"29"},{"1":"au_te_2005_05_22_789","2":"28"},{"1":"au_vi_2004_01_17_529","2":"17"},{"1":"az_sa_2004_04_06_567","2":"28"},{"1":"be_ba_2002_11_07_723","2":"14"},{"1":"be_de_2001_02_01_060","2":"22"},{"1":"be_ma_2003_04_09_595","2":"26"},{"1":"be_ma_2003_05_13_121","2":"26"},{"1":"be_ma_2003_07_08_043","2":"22"},{"1":"be_ma_2003_08_08_206","2":"28"},{"1":"be_mo_2005_12_29_815","2":"28"},{"1":"be_pi_2005_06_28_857","2":"24"},{"1":"be_ra_2005_06_09_810","2":"30"},{"1":"be_za_1966_01_16_877","2":"26"},{"1":"bi_ca_2002_09_03_068","2":"28"},{"1":"bi_po_2003_10_18_886","2":"26"},{"1":"bi_ro_2003_09_07_934","2":"27"},{"1":"bi_za_2005_02_22_631","2":"21"},{"1":"ca_ba_1999_03_11_977","2":"29"},{"1":"ca_bo_1987_10_16_628","2":"22"},{"1":"ca_br_1999_01_29_713","2":"16"},{"1":"ca_ca_2002_11_08_629","2":"26"},{"1":"ca_co_2000_02_17_682","2":"23"},{"1":"ca_fo_2002_08_30_071","2":"27"},{"1":"ca_ge_2002_01_16_704","2":"24"},{"1":"ca_gh_2003_10_07_816","2":"27"},{"1":"ca_gi_2003_09_16_737","2":"15"},{"1":"ca_ma_2003_12_24_834","2":"26"},{"1":"ca_mo_2005_01_12_659","2":"21"},{"1":"ca_mu_2005_04_28_047","2":"29"},{"1":"ca_pa_2005_04_20_282","2":"27"},{"1":"ca_po_2005_11_08_041","2":"30"},{"1":"ca_ro_2004_09_03_927","2":"31"},{"1":"ca_te_2005_07_04_549","2":"31"},{"1":"ca_tr_2005_04_14_376","2":"27"},{"1":"ca_ur_2005_01_27_051","2":"28"},{"1":"ca_za_2005_06_29_989","2":"31"},{"1":"ce_la_2005_09_25_577","2":"19"},{"1":"ch_ar_2000_08_08_388","2":"26"},{"1":"ch_ba_2001_03_02_416","2":"26"},{"1":"ch_be_1998_08_11_011","2":"3"},{"1":"ch_bi_2001_01_28_407","2":"30"},{"1":"ch_bl_2001_09_25_360","2":"26"},{"1":"ch_ch_1999_10_05_790","2":"26"},{"1":"ch_cr_2003_02_27_137","2":"26"},{"1":"ch_da_2000_08_04_388","2":"23"},{"1":"ch_fa_1992_09_30_085","2":"26"},{"1":"ch_fa_2002_01_06_733","2":"26"},{"1":"ch_fu_2003_12_19_859","2":"28"},{"1":"ch_gr_2003_03_31_635","2":"27"},{"1":"ch_lu_2005_07_29_320","2":"30"},{"1":"ch_ma_2002_04_30_237","2":"26"},{"1":"ch_mo_2005_07_21_173","2":"30"},{"1":"ch_or_2003_11_18_479","2":"26"},{"1":"ch_pr_2005_04_08_406","2":"30"},{"1":"ch_re_2005_05_04_512","2":"24"},{"1":"ch_sc_1999_10_26_739","2":"31"},{"1":"ch_ta_2005_12_03_835","2":"31"},{"1":"ch_va_2003_04_08_010","2":"26"},{"1":"chiarella","2":"26"},{"1":"ci_fa_1998_10_15_423","2":"23"},{"1":"cl_de_1999_11_04_085","2":"30"},{"1":"cl_me_2004_10_20_681","2":"26"},{"1":"cl_pe_2000_02_17_166","2":"4"},{"1":"cl_ra_2005_06_17_016","2":"15"},{"1":"co_bo_2002_12_26_113","2":"26"},{"1":"co_ca_2003_07_23_023","2":"3"},{"1":"co_ci_2003_07_29_927","2":"26"},{"1":"co_ga_2003_10_29_614","2":"28"},{"1":"co_la_1999_10_18_236","2":"29"},{"1":"co_pu_2005_06_21_071","2":"30"},{"1":"cr_tm_2004_06_22_652","2":"30"},{"1":"da_ba_1996_03_25_685","2":"26"},{"1":"da_ba_2000_12_11_775","2":"22"},{"1":"da_fa_2003_08_26_252","2":"26"},{"1":"da_ze_2004_05_07_594","2":"29"},{"1":"de_ga_2003_02_08_434","2":"26"},{"1":"de_ia_2003_01_09_961","2":"25"},{"1":"di_ma_2005_10_20_756","2":"2"},{"1":"di_st_2005_12_02_934","2":"30"},{"1":"ed_ul_2003_04_16_576","2":"25"},{"1":"el_ba_2002_07_26_121","2":"31"},{"1":"el_bi_2001_08_22_377","2":"21"},{"1":"el_br_2002_07_12_207","2":"16"},{"1":"el_bu_2003_09_24_545","2":"27"},{"1":"el_ca_2003_06_14_053","2":"23"},{"1":"el_ci_2002_02_15_057","2":"26"},{"1":"el_de_2002_02_11_920","2":"28"},{"1":"el_de_2003_05_21_445","2":"27"},{"1":"el_et_2003_04_30_367","2":"27"},{"1":"el_fi_2000_06_25_140","2":"28"},{"1":"el_ge_2003_03_15_454","2":"26"},{"1":"el_go_2003_12_19_714","2":"26"},{"1":"el_la_2004_08_30_289","2":"21"},{"1":"el_li_2001_03_18_661","2":"24"},{"1":"el_lu_2005_12_21_023","2":"31"},{"1":"el_ma_2002_02_23_664","2":"28"},{"1":"el_ma_2003_10_04_505","2":"27"},{"1":"el_pa_2005_03_01_796","2":"23"},{"1":"el_pa_2005_08_14_772","2":"23"},{"1":"el_pa_2005_10_31_461","2":"31"},{"1":"el_pe_2004_03_05_522","2":"8"},{"1":"el_pr_2002_07_12_840","2":"27"},{"1":"el_ro_1992_05_28_005","2":"30"},{"1":"el_sa_2005_06_30_005","2":"28"},{"1":"el_sp_2000_08_09_356","2":"26"},{"1":"el_sp_2004_08_03_826","2":"24"},{"1":"el_to_2005_09_02_232","2":"37"},{"1":"em_as_2003_06_12_751","2":"26"},{"1":"em_ba_1997_06_20_373","2":"27"},{"1":"em_bo_2001_11_16_907","2":"11"},{"1":"em_co_2003_04_28_389","2":"26"},{"1":"em_di_2000_04_26_182","2":"29"},{"1":"em_ra_2004_12_13_492","2":"30"},{"1":"em_ro_2003_11_29_049","2":"26"},{"1":"en_ba_2001_02_16_732","2":"4"},{"1":"en_bu_2002_02_16_645","2":"26"},{"1":"er_be_1999_06_21_009","2":"15"},{"1":"er_sc_2003_05_15_225","2":"21"},{"1":"er_va_2001_06_12_922","2":"24"},{"1":"es_fi_2002_02_17_204","2":"26"},{"1":"ev_no_2003_09_18_822","2":"26"},{"1":"ev_pa_2003_01_04_708","2":"26"},{"1":"ev_tu_2004_10_06_265","2":"30"},{"1":"fa_ca_2001_08_09_201","2":"26"},{"1":"fe_an_2000_12_11_786","2":"24"},{"1":"fe_bo_2002_10_11_737","2":"25"},{"1":"fe_ch_2003_06_14_591","2":"25"},{"1":"fe_ci_2004_02_05_913","2":"24"},{"1":"fe_gi_1999_08_28_709","2":"25"},{"1":"fe_gr_2002_02_19_434","2":"25"},{"1":"fe_gu_2000_10_24_922","2":"26"},{"1":"fi_be_2003_02_02_207","2":"26"},{"1":"fi_bo_2003_11_25_741","2":"25"},{"1":"fi_so_2003_02_04_215","2":"17"},{"1":"fi_va_2005_01_04_530","2":"31"},{"1":"fl_me_2004_02_17_358","2":"28"},{"1":"fr_ba_2001_12_15_595","2":"26"},{"1":"fr_ci_2002_11_13_719","2":"26"},{"1":"fr_di_2002_05_11_518","2":"23"},{"1":"fr_fa_2002_10_17_235","2":"15"},{"1":"fr_ga_1998_02_14_859","2":"28"},{"1":"fr_me_2005_06_25_929","2":"4"},{"1":"fr_pa_2001_04_13_414","2":"28"},{"1":"fr_pa_2003_05_03_673","2":"27"},{"1":"fr_pa_2005_07_15_344","2":"31"},{"1":"fr_po_2000_05_14_696","2":"28"},{"1":"fr_pu_2003_05_28_252","2":"25"},{"1":"fr_ra_2001_05_26_203","2":"26"},{"1":"fr_re_2003_08_05_534","2":"26"},{"1":"fr_ro_2002_07_04_300","2":"26"},{"1":"fr_si_1999_10_29_937","2":"25"},{"1":"fr_va_2003_11_17_977","2":"26"},{"1":"fra","2":"8"},{"1":"francesco","2":"6"},{"1":"ga_ba_1998_05_26_845","2":"30"},{"1":"ga_ba_2002_06_06_822","2":"31"},{"1":"ga_be_2002_10_23_242","2":"27"},{"1":"ga_be_2003_04_28_831","2":"7"},{"1":"ga_de_2001_06_19_349","2":"23"},{"1":"ga_ga_2002_11_26_429","2":"38"},{"1":"ga_la_2003_08_25_091","2":"4"},{"1":"ga_lo_2003_03_23_920","2":"26"},{"1":"ga_pa_2001_06_19_685","2":"27"},{"1":"ga_pi_2002_03_08_624","2":"26"},{"1":"ga_sa_2003_03_25_516","2":"19"},{"1":"ga_sa_2005_04_30_467","2":"28"},{"1":"ga_to_2003_10_05_427","2":"6"},{"1":"ge_bi_2003_04_25_790","2":"25"},{"1":"ge_ca_1998_07_11_665","2":"24"},{"1":"gi_ac_2003_12_22_928","2":"15"},{"1":"gi_al_2002_02_06_748","2":"23"},{"1":"gi_ba_2002_06_25_068","2":"13"},{"1":"gi_ba_2002_08_09_862","2":"31"},{"1":"gi_be_2001_01_18_537","2":"57"},{"1":"gi_ca_1995_01_27_425","2":"26"},{"1":"gi_ca_2002_05_23_628","2":"29"},{"1":"gi_ca_2003_04_04_176","2":"23"},{"1":"gi_ci_2001_02_27_248","2":"12"},{"1":"gi_co_2001_08_27_568","2":"27"},{"1":"gi_di_2002_08_20_072","2":"26"},{"1":"gi_do_1997_02_10_547","2":"26"},{"1":"gi_fa_2003_10_01_833","2":"22"},{"1":"gi_fe_2003_01_10_853","2":"26"},{"1":"gi_fe_2003_05_04_113","2":"21"},{"1":"gi_fi_2003_04_24_870","2":"21"},{"1":"gi_ga_1995_02_08_213","2":"26"},{"1":"gi_ga_2001_03_16_540","2":"25"},{"1":"gi_gr_2003_08_20_153","2":"26"},{"1":"gi_la_2005_03_15_562","2":"30"},{"1":"gi_lo_2003_10_04_373","2":"20"},{"1":"gi_lo_2004_06_27_237","2":"28"},{"1":"gi_lu_2005_08_30_530","2":"30"},{"1":"gi_ma_1999_09_11_636","2":"13"},{"1":"gi_ma_2002_09_27_696","2":"31"},{"1":"gi_ma_2003_05_16_223","2":"23"},{"1":"gi_ma_2004_01_10_447","2":"26"},{"1":"gi_ma_2006_01_06_210","2":"31"},{"1":"gi_me_2005_07_26_290","2":"24"},{"1":"gi_mi_2002_11_14_530","2":"28"},{"1":"gi_mi_2005_12_07_854","2":"31"},{"1":"gi_mo_2000_12_02_831","2":"26"},{"1":"gi_na_2005_03_08_339","2":"25"},{"1":"gi_no_2005_08_03_572","2":"24"},{"1":"gi_pa_2003_07_12_966","2":"26"},{"1":"gi_po_2001_05_08_620","2":"12"},{"1":"gi_ro_2004_07_30_589","2":"26"},{"1":"gi_ru_2005_03_08_033","2":"31"},{"1":"gi_si_2003_06_29_520","2":"26"},{"1":"gi_so_2005_09_11_398","2":"30"},{"1":"gi_st_2005_07_22_311","2":"28"},{"1":"gi_to_2002_01_15_962","2":"26"},{"1":"gi_to_2004_06_25_982","2":"30"},{"1":"gi_tr_2005_09_08_335","2":"25"},{"1":"gi_vo_2002_05_12_841","2":"24"},{"1":"gi_vo_2003_10_04_502","2":"20"},{"1":"gi_zo_1997_04_29_358","2":"25"},{"1":"giulia","2":"29"},{"1":"gr_ba_2003_11_29_201","2":"24"},{"1":"gr_ma_2003_02_19_619","2":"15"},{"1":"gr_pe_2005_11_17_273","2":"17"},{"1":"gu_ri_2003_05_28_767","2":"31"},{"1":"il_co_2003_08_20_771","2":"26"},{"1":"il_go_1994_04_12_024","2":"26"},{"1":"il_le_2005_11_13_728","2":"31"},{"1":"il_re_2006_01_18_645","2":"31"},{"1":"ir_ce_2000_10_14_691","2":"24"},{"1":"ir_ce_2001_08_08_336","2":"25"},{"1":"ir_la_2005_05_10_302","2":"30"},{"1":"ir_ma_2004_10_19_669","2":"28"},{"1":"ir_mo_2005_02_23_157","2":"31"},{"1":"ir_ri_2004_12_04_430","2":"25"},{"1":"ir_ro_2003_08_06_734","2":"27"},{"1":"ir_sa_2005_07_04_464","2":"30"},{"1":"ir_to_2003_10_31_441","2":"28"},{"1":"je_le_2005_12_23_699","2":"31"},{"1":"je_ma_2005_01_13_962","2":"26"},{"1":"jh_vi_2001_02_18_298","2":"26"},{"1":"jjha4","2":"32"},{"1":"ju_ma_2001_12_12_006","2":"26"},{"1":"ke_za_2003_01_12_574","2":"13"},{"1":"ke_zh_2005_05_28_685","2":"20"},{"1":"kr_la_1999_08_06_579","2":"23"},{"1":"la_ba_2004_05_01_733","2":"24"},{"1":"la_ce_2003_04_09_434","2":"26"},{"1":"la_fi_2000_01_21_047","2":"29"},{"1":"la_fi_2001_10_26_216","2":"31"},{"1":"la_gi_2001_11_15_963","2":"22"},{"1":"la_ma_2003_04_03_251","2":"23"},{"1":"la_ma_2004_05_16_992","2":"24"},{"1":"la_ma_2006_01_31_787","2":"15"},{"1":"la_pe_2005_12_15_770","2":"30"},{"1":"la_pu_2004_11_28_494","2":"27"},{"1":"la_wh_2004_12_13_861","2":"9"},{"1":"le_ca_2002_10_08_302","2":"26"},{"1":"le_ci_1999_10_05_831","2":"14"},{"1":"le_de_2003_04_26_615","2":"24"},{"1":"le_de_2003_09_05_067","2":"26"},{"1":"le_du_2003_03_30_117","2":"26"},{"1":"le_ma_2003_11_03_510","2":"30"},{"1":"li_ba_2001_01_02_055","2":"30"},{"1":"li_da_1999_07_30_024","2":"28"},{"1":"li_de_1998_11_27_021","2":"16"},{"1":"li_fi_2003_08_23_782","2":"26"},{"1":"li_pi_2006_03_09_021","2":"31"},{"1":"li_vi_2003_05_02_557","2":"14"},{"1":"li_vi_2004_06_22_107","2":"29"},{"1":"li_zo_2004_02_14_210","2":"27"},{"1":"lo_ba_2003_07_22_560","2":"26"},{"1":"lo_bi_2001_06_24_079","2":"26"},{"1":"lo_ca_2000_08_28_225","2":"8"},{"1":"lo_fo_2001_10_11_847","2":"24"},{"1":"lo_ra_2005_10_16_593","2":"30"},{"1":"lu_be_2002_08_07_747","2":"18"},{"1":"lu_fa_2001_09_16_196","2":"10"},{"1":"lu_ma_2005_11_04_366","2":"31"},{"1":"lu_me_2006_01_17_463","2":"31"},{"1":"lu_pa_2003_11_12_642","2":"26"},{"1":"lu_ri_2005_10_12_907","2":"27"},{"1":"lu_se_2004_01_02_817","2":"26"},{"1":"lucia","2":"28"},{"1":"ly_vi_2005_11_24_863","2":"28"},{"1":"ma_as_2002_05_13_109","2":"17"},{"1":"ma_ba_2000_07_05_787","2":"24"},{"1":"ma_ba_2002_09_09_052","2":"26"},{"1":"ma_bu_2003_09_02_200","2":"26"},{"1":"ma_ca_1996_09_14_696","2":"23"},{"1":"ma_ca_2001_03_13_546","2":"5"},{"1":"ma_ca_2002_06_11_597","2":"26"},{"1":"ma_ca_2002_11_02_745","2":"30"},{"1":"ma_ca_2003_06_21_642","2":"24"},{"1":"ma_ce_2000_07_15_034","2":"24"},{"1":"ma_ci_2002_08_03_023","2":"29"},{"1":"ma_de_2002_06_10_700","2":"22"},{"1":"ma_fa_2000_06_25_721","2":"26"},{"1":"ma_fa_2003_03_24_439","2":"26"},{"1":"ma_fo_2004_10_04_676","2":"4"},{"1":"ma_ge_2002_05_01_421","2":"26"},{"1":"ma_ie_2000_07_31_515","2":"13"},{"1":"ma_la_2005_01_18_750","2":"29"},{"1":"ma_la_2005_07_29_507","2":"31"},{"1":"ma_li_2005_10_11_537","2":"27"},{"1":"ma_lo_2003_03_20_086","2":"28"},{"1":"ma_lo_2005_06_26_262","2":"31"},{"1":"ma_ma_2003_09_19_720","2":"26"},{"1":"ma_ma_2003_10_13_417","2":"25"},{"1":"ma_ma_2004_10_11_947","2":"26"},{"1":"ma_ma_2005_05_18_423","2":"31"},{"1":"ma_ma_2006_04_14_979","2":"22"},{"1":"ma_mo_2005_03_08_142","2":"29"},{"1":"ma_mo_2005_06_08_420","2":"11"},{"1":"ma_mo_2006_01_19_745","2":"18"},{"1":"ma_ne_2003_02_14_288","2":"27"},{"1":"ma_ni_2000_10_17_970","2":"27"},{"1":"ma_no_2003_08_08_723","2":"26"},{"1":"ma_op_2002_10_17_619","2":"25"},{"1":"ma_pa_2003_12_24_373","2":"25"},{"1":"ma_pa_2005_06_22_205","2":"29"},{"1":"ma_pe_2005_09_29_691","2":"28"},{"1":"ma_pi_2003_04_23_317","2":"26"},{"1":"ma_pi_2004_12_22_169","2":"31"},{"1":"ma_po_2005_03_24_421","2":"30"},{"1":"ma_qu_2003_09_15_711","2":"22"},{"1":"ma_ro_2003_05_31_282","2":"25"},{"1":"ma_ro_2004_01_18_699","2":"31"},{"1":"ma_ro_2005_07_29_713","2":"22"},{"1":"ma_ro_2005_11_18_005","2":"15"},{"1":"ma_ru_2004_11_19_833","2":"17"},{"1":"ma_sa_2005_01_31_124","2":"28"},{"1":"ma_sc_04_01_20_409","2":"24"},{"1":"ma_se_2003_06_24_287","2":"28"},{"1":"ma_si_2005_02_11_538","2":"10"},{"1":"ma_ta_2006_01_28_997","2":"30"},{"1":"ma_te_2001_08_10_003","2":"26"},{"1":"ma_ti_2006_01_05_815","2":"28"},{"1":"ma_va_2005_03_29_741","2":"27"},{"1":"ma_za_2004_06_10_668","2":"17"},{"1":"ma_zu_2005_09_19_246","2":"30"},{"1":"mar","2":"26"},{"1":"matteino","2":"14"},{"1":"me_ba_1999_12_8_848","2":"23"},{"1":"mi_ch_2002_03_13_414","2":"27"},{"1":"mi_fe_2001_04_26_301","2":"26"},{"1":"mi_fi_2000_03_20_804","2":"24"},{"1":"mi_la_1983_12_30_637","2":"27"},{"1":"mi_lo_2005_03_17_960","2":"20"},{"1":"mi_si_2003_10_15_839","2":"26"},{"1":"mi_st_2003_06_26_432","2":"25"},{"1":"mo_ca_2002_03_21_939","2":"4"},{"1":"ms","2":"26"},{"1":"na_on_2003_10_01_490","2":"25"},{"1":"nachota","2":"26"},{"1":"ni_ma_2004_02_03_108","2":"25"},{"1":"ni_ru_2004_05_20_372","2":"31"},{"1":"ni_sa_2002_02_28_835","2":"27"},{"1":"ni_ve_2003_12_26_353","2":"31"},{"1":"no_bi_2001_04_24_039","2":"28"},{"1":"no_ci_2000_10_06_903","2":"28"},{"1":"no_ma_2004_02_28_379","2":"26"},{"1":"noemi lorena","2":"31"},{"1":"ol_ri_2003_07_11_059","2":"17"},{"1":"pa_ma_1983_03_08_270","2":"26"},{"1":"pa_pe_2003_06_23_463","2":"26"},{"1":"pa_po_2005_02_13_810","2":"29"},{"1":"pa_sc_2005_09_10_468","2":"29"},{"1":"pi_tu_2005_04_04_341","2":"29"},{"1":"pr_ba_2002_11_29_443","2":"24"},{"1":"ra_pe_2005_02_25_938","2":"31"},{"1":"re_ma_2005_11_25_490","2":"31"},{"1":"re_st_1999_08_08_232","2":"26"},{"1":"re_ve_2004_10_21_036","2":"26"},{"1":"ri_ma_2002_11_20_973","2":"26"},{"1":"ro_br_1995_10_30_057","2":"28"},{"1":"ro_la_2003_11_12_881","2":"25"},{"1":"sa","2":"31"},{"1":"sa_an_2002_05_18_160","2":"25"},{"1":"sa_be_2001_07_06_169","2":"3"},{"1":"sa_ca_2003_04_18_949","2":"26"},{"1":"sa_ch_2002_09_16_822","2":"27"},{"1":"sa_di_2000_10_28_113","2":"24"},{"1":"sa_do_2000_03_16_198","2":"20"},{"1":"sa_gi_2002_07_16_551","2":"14"},{"1":"sa_la_2002_11_29_127","2":"26"},{"1":"sa_ma_2002_02_20_776","2":"26"},{"1":"sa_ma_2003_09_25_008","2":"26"},{"1":"sa_ma_2005_03_03_666","2":"28"},{"1":"sa_me_2002_11_07_453","2":"10"},{"1":"sa_ne_2003_06_12_362","2":"26"},{"1":"sa_ol_2004_06_21_909","2":"27"},{"1":"sa_pa_2005_06_03_918","2":"31"},{"1":"sa_pe_2003_01_04_879","2":"22"},{"1":"sa_pe_2003_07_25_475","2":"17"},{"1":"sa_ro_2005_07_18_542","2":"25"},{"1":"safe123!","2":"14"},{"1":"sam","2":"9"},{"1":"se_co_1998_04_24_910","2":"21"},{"1":"se_ro_2005_04_01_321","2":"17"},{"1":"se_ti_2000_03_04_975","2":"5"},{"1":"si_al_2003_08_31_334","2":"26"},{"1":"si_co_2002_08_13_884","2":"25"},{"1":"si_go_2002_12_08_648","2":"23"},{"1":"si_ma_2003_10_31_940","2":"30"},{"1":"si_pa_2003_01_18_444","2":"10"},{"1":"si_te_2003_06_04_835","2":"18"},{"1":"silvia","2":"14"},{"1":"so_al_1988_05_20_025","2":"29"},{"1":"so_ba_2000_12_20_889","2":"25"},{"1":"so_co_2004_01_11_355","2":"26"},{"1":"so_do_2002_10_09_686","2":"26"},{"1":"so_fa_1997_04_21_013","2":"22"},{"1":"so_fa_1999_11_16_426","2":"29"},{"1":"so_fa_2003_10_21_442","2":"26"},{"1":"so_fr_2003_05_21_499","2":"26"},{"1":"so_gh_2003_03_20_781","2":"27"},{"1":"so_go_2000_05_23_552","2":"21"},{"1":"so_gr_2003_05_06_698","2":"27"},{"1":"so_la_2002_10_16_896","2":"26"},{"1":"so_li_2004_10_29_776","2":"28"},{"1":"so_ma_2002_07_10_675","2":"26"},{"1":"so_ma_2003_10_13_804","2":"29"},{"1":"so_mi_2003_03_19_419","2":"26"},{"1":"so_na_2004_05_30_149","2":"31"},{"1":"so_nu_2005_03_11_255","2":"30"},{"1":"so_or_2003_08_07_377","2":"25"},{"1":"so_pa_2003_01_26_225","2":"26"},{"1":"so_pa_2005_04_02_152","2":"28"},{"1":"so_pa_2005_10_17_005","2":"18"},{"1":"so_pu_2002_01_28_706","2":"26"},{"1":"so_ru_2006_02_08_848","2":"25"},{"1":"so_vi_2004_10_14_130","2":"28"},{"1":"so_vi_2006_01_30_222","2":"30"},{"1":"st_ma_2004_04_21_426","2":"30"},{"1":"te_an_2002_03_21_518","2":"18"},{"1":"te_li_2005_06_12_911","2":"16"},{"1":"th_sa_2005_11_05_821","2":"27"},{"1":"to_be_2001_05_16_063","2":"31"},{"1":"to_ce_2002_03_05_355","2":"26"},{"1":"to_ce_2002_10_02_733","2":"26"},{"1":"to_fo_2002_10_25_435","2":"31"},{"1":"to_se_2005_06_15_927","2":"31"},{"1":"to_va_2005_06_01_982","2":"31"},{"1":"to_va_2005_11_12_377","2":"30"},{"1":"va_ba_2003_03_31_999","2":"22"},{"1":"va_fa_1992_03_30_800","2":"24"},{"1":"va_li_2004_04_15_257","2":"31"},{"1":"va_ma_2005_05_31_567","2":"31"},{"1":"ve_pi_2005_07_23_462","2":"15"},{"1":"ve_sa_2005_04_10_675","2":"23"},{"1":"ve_st_2004_06_06_207","2":"30"},{"1":"vi_da_1999_02_11_499","2":"31"},{"1":"vi_de_2002_12_30_067","2":"23"},{"1":"vi_di_2003_08_07_429","2":"3"},{"1":"vi_la_2003_11_28_009","2":"23"},{"1":"vi_le_2003_11_10_511","2":"26"},{"1":"vi_ma_2004_06_14_505","2":"28"},{"1":"vi_me_2003_12_23_966","2":"26"},{"1":"vi_no_2004_12_05_561","2":"6"},{"1":"vi_pi_2005_08_23_271","2":"31"},{"1":"vi_ve_2002_11_20_937","2":"25"},{"1":"ya_ou_2005_07_30_594","2":"31"},{"1":"yu_ma_2005_09_20_667","2":"19"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="missingness-by-scale" class="level2">
+<h2 class="anchored" data-anchor-id="missingness-by-scale">2) Missingness by scale</h2>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>miss_cols <span class="ot">&lt;-</span> <span class="fu">names</span>(dat)[<span class="sc">!</span><span class="fu">names</span>(dat) <span class="sc">%in%</span> <span class="fu">names</span>(ema)]  <span class="co"># newly joined scale columns</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>miss_summary <span class="ot">&lt;-</span> dat <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(miss_cols), <span class="sc">~</span> <span class="fu">mean</span>(<span class="fu">is.na</span>(.)))) <span class="sc">%&gt;%</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"variable"</span>, <span class="at">values_to =</span> <span class="st">"pct_missing"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(pct_missing))</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>miss_summary <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">30</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["pct_missing"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"esi_bf_baseline","2":"0.2302781"},{"1":"rosenberg_score_baseline","2":"0.1772951"},{"1":"self_kindness_baseline","2":"0.1772951"},{"1":"common_humanity_baseline","2":"0.1772951"},{"1":"mindfulness_baseline","2":"0.1772951"},{"1":"self_judgment_baseline","2":"0.1772951"},{"1":"isolation_baseline","2":"0.1772951"},{"1":"over_identification_baseline","2":"0.1772951"},{"1":"scs_total_score_baseline","2":"0.1772951"},{"1":"boldness_baseline","2":"0.1772951"},{"1":"meanness_baseline","2":"0.1772951"},{"1":"dass_stress_baseline","2":"0.1503632"},{"1":"dass_anxiety_baseline","2":"0.1503632"},{"1":"dass_depression_baseline","2":"0.1503632"},{"1":"inhibitory_ius_baseline","2":"0.1503632"},{"1":"prospective_ius_baseline","2":"0.1503632"},{"1":"ius_tot_baseline","2":"0.1503632"},{"1":"domain_negative_affect_baseline","2":"0.1280546"},{"1":"domain_detachment_baseline","2":"0.1280546"},{"1":"domain_antagonism_baseline","2":"0.1280546"},{"1":"domain_disinhibition_baseline","2":"0.1280546"},{"1":"domain_psychoticism_baseline","2":"0.1280546"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="range-checks-per-scale" class="level2">
+<h2 class="anchored" data-anchor-id="range-checks-per-scale">3) Range checks (per scale)</h2>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define expected ranges for some common scales (adjust as needed)</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>expected_ranges <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>pattern,        <span class="sc">~</span>min_ok, <span class="sc">~</span>max_ok,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"rosenberg"</span>,        <span class="dv">10</span>,     <span class="dv">40</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"scs_total"</span>,        <span class="dv">24</span>,     <span class="dv">130</span>,   <span class="co"># if 26 items 1..5 reversed where needed</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"boldness"</span>,          <span class="dv">0</span>,      <span class="dv">57</span>,   <span class="co"># 19 items * max 3</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"meanness"</span>,          <span class="dv">0</span>,      <span class="dv">57</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"dass"</span>,              <span class="dv">0</span>,      <span class="dv">42</span>    <span class="co"># each subscale 0..42 (7 items*0..3*2 if scoring doubled; adapt)</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>range_check <span class="ot">&lt;-</span> <span class="cf">function</span>(df, patt, lo, hi) {</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  cols <span class="ot">&lt;-</span> <span class="fu">names</span>(df)[<span class="fu">grepl</span>(patt, <span class="fu">names</span>(df), <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)]</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(cols) <span class="sc">==</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="fu">tibble</span>())</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(cols), <span class="fu">list</span>(<span class="at">min =</span> <span class="sc">~</span><span class="fu">min</span>(., <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="at">max =</span> <span class="sc">~</span><span class="fu">max</span>(., <span class="at">na.rm=</span><span class="cn">TRUE</span>))))</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> out <span class="sc">%&gt;%</span> <span class="fu">pivot_longer</span>(<span class="fu">everything</span>())</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> out <span class="sc">%&gt;%</span> <span class="fu">separate</span>(name, <span class="at">into=</span><span class="fu">c</span>(<span class="st">"var"</span>,<span class="st">"stat"</span>), <span class="at">sep=</span><span class="st">"(_min|_max)$"</span>, <span class="at">extra=</span><span class="st">"merge"</span>, <span class="at">fill=</span><span class="st">"right"</span>)</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> out <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">pattern =</span> patt, <span class="at">min_ok =</span> lo, <span class="at">max_ok =</span> hi)</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  out</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>qc_ranges <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">range_check</span>(dat, <span class="st">"rosenberg"</span>, <span class="dv">10</span>, <span class="dv">40</span>),</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">range_check</span>(dat, <span class="st">"scs_total|scs_ts"</span>, <span class="dv">26</span>, <span class="dv">130</span>),</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">range_check</span>(dat, <span class="st">"boldness"</span>, <span class="dv">0</span>, <span class="dv">57</span>),</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">range_check</span>(dat, <span class="st">"meanness"</span>, <span class="dv">0</span>, <span class="dv">57</span>),</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">range_check</span>(dat, <span class="st">"dass"</span>, <span class="dv">0</span>, <span class="dv">42</span>)</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>qc_ranges</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["var"],"name":[1],"type":["chr"],"align":["left"]},{"label":["stat"],"name":[2],"type":["chr"],"align":["left"]},{"label":["value"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["pattern"],"name":[4],"type":["chr"],"align":["left"]},{"label":["min_ok"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["max_ok"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"rosenberg_score_baseline","2":"","3":"12","4":"rosenberg","5":"10","6":"40"},{"1":"rosenberg_score_baseline","2":"","3":"40","4":"rosenberg","5":"10","6":"40"},{"1":"scs_total_score_baseline","2":"","3":"26","4":"scs_total|scs_ts","5":"26","6":"130"},{"1":"scs_total_score_baseline","2":"","3":"124","4":"scs_total|scs_ts","5":"26","6":"130"},{"1":"tripm_boldness","2":"","3":"2","4":"boldness","5":"0","6":"57"},{"1":"tripm_boldness","2":"","3":"8","4":"boldness","5":"0","6":"57"},{"1":"boldness_baseline","2":"","3":"3","4":"boldness","5":"0","6":"57"},{"1":"boldness_baseline","2":"","3":"48","4":"boldness","5":"0","6":"57"},{"1":"tripm_meanness","2":"","3":"2","4":"meanness","5":"0","6":"57"},{"1":"tripm_meanness","2":"","3":"8","4":"meanness","5":"0","6":"57"},{"1":"meanness_baseline","2":"","3":"0","4":"meanness","5":"0","6":"57"},{"1":"meanness_baseline","2":"","3":"34","4":"meanness","5":"0","6":"57"},{"1":"dass21_2","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass21_2","2":"","3":"3","4":"dass","5":"0","6":"42"},{"1":"dass21_5","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass21_5","2":"","3":"3","4":"dass","5":"0","6":"42"},{"1":"dass21_3","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass21_3","2":"","3":"3","4":"dass","5":"0","6":"42"},{"1":"dass21_4","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass21_4","2":"","3":"3","4":"dass","5":"0","6":"42"},{"1":"dass21_6","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass21_6","2":"","3":"3","4":"dass","5":"0","6":"42"},{"1":"dass21_1","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass21_1","2":"","3":"3","4":"dass","5":"0","6":"42"},{"1":"dass_sum","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_sum","2":"","3":"18","4":"dass","5":"0","6":"42"},{"1":"dass_stress","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_stress","2":"","3":"6","4":"dass","5":"0","6":"42"},{"1":"dass_depression","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_depression","2":"","3":"6","4":"dass","5":"0","6":"42"},{"1":"dass_anxiety","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_anxiety","2":"","3":"6","4":"dass","5":"0","6":"42"},{"1":"dass_stress_baseline","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_stress_baseline","2":"","3":"21","4":"dass","5":"0","6":"42"},{"1":"dass_anxiety_baseline","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_anxiety_baseline","2":"","3":"17","4":"dass","5":"0","6":"42"},{"1":"dass_depression_baseline","2":"","3":"0","4":"dass","5":"0","6":"42"},{"1":"dass_depression_baseline","2":"","3":"20","4":"dass","5":"0","6":"42"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="distributions-quick-plots" class="level2">
+<h2 class="anchored" data-anchor-id="distributions-quick-plots">4) Distributions (quick plots)</h2>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Attempt some common totals if present</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>plot_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"rosenberg_score"</span>, <span class="st">"scs_total_score"</span>, <span class="st">"boldness"</span>, <span class="st">"meanness"</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>present <span class="ot">&lt;-</span> <span class="fu">intersect</span>(plot_cols, <span class="fu">names</span>(dat))</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(present) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (v <span class="cf">in</span> present) {</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(dat, <span class="fu">aes</span>(<span class="at">x =</span> .data[[v]])) <span class="sc">+</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">30</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">labs</span>(<span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Distribution:"</span>, v))</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span>(p)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+</section>
+<section id="save-merged-dataset" class="level1">
+<h1>Save merged dataset</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>merged_rds <span class="ot">&lt;-</span> <span class="fu">file.path</span>(out_dir, <span class="st">"ema_plus_scales_merged.RDS"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>merged_csv <span class="ot">&lt;-</span> <span class="fu">file.path</span>(out_dir, <span class="st">"ema_plus_scales_merged.csv"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(dat, merged_rds)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>rio<span class="sc">::</span><span class="fu">export</span>(dat, merged_csv)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">output =</span> <span class="fu">c</span>(merged_rds, merged_csv))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["output"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_plus_scales_merged.RDS"},{"1":"/Users/corrado/_repositories/pid5-ema/data/processed/ema_plus_scales_merged.csv"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="optional-compact-qc-report" class="level1">
+<h1>(Optional) Compact QC report</h1>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>qc_report <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">rows_after_each_join =</span> row_counts,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">duplicate_users_in_ema =</span> dups_ema,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">missingness_summary =</span> miss_summary,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">range_checks =</span> qc_ranges</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Save as RDS</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>qc_path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(out_dir, <span class="st">"ema_scales_qc_report.RDS"</span>)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(qc_report, qc_path)</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>qc_path</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "/Users/corrado/_repositories/pid5-ema/data/processed/ema_scales_qc_report.RDS"</code></pre>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

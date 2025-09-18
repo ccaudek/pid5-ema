@@ -1,0 +1,98 @@
+variable,group,description
+cope_10_rev,EMA: COPE,
+cope_avoid,EMA: COPE,EMA COPE: Avoidance
+cope_nvi_1,EMA: COPE,
+cope_nvi_10,EMA: COPE,
+cope_nvi_2,EMA: COPE,
+cope_nvi_3,EMA: COPE,
+cope_nvi_4,EMA: COPE,
+cope_nvi_5,EMA: COPE,
+cope_nvi_6,EMA: COPE,
+cope_nvi_7,EMA: COPE,
+cope_nvi_8,EMA: COPE,
+cope_nvi_9,EMA: COPE,
+cope_positive_att,EMA: COPE,EMA COPE: Positive attitude
+cope_prob_or,EMA: COPE,EMA COPE: Problem-oriented coping
+cope_social_support,EMA: COPE,EMA COPE: Social support
+cope_trascendent_or,EMA: COPE,EMA COPE: Transcendent orientation
+ipv_sum,EMA: IPV,EMA Intimate Partner Violence (sum)
+pid5_antagonism,EMA: PID-5 (subset),EMA PID-5 Antagonism composite (subset items)
+pid5_detachment,EMA: PID-5 (subset),EMA PID-5 Detachment composite (subset items)
+pid5_disinhibition,EMA: PID-5 (subset),EMA PID-5 Disinhibition composite (subset items)
+pid5_negative_affectivity,EMA: PID-5 (subset),EMA PID-5 Negative Affectivity composite (subset items)
+pid5_psychoticism,EMA: PID-5 (subset),EMA PID-5 Psychoticism composite (subset items)
+cs_pos,EMA: SCS (state composites),State Self-Compassion: positive component (sum of SCS*_pos items)
+ucs_neg,EMA: SCS (state composites),State Self-Compassion: uncompassionate/negative component (sum of SCS*_neg items)
+tripm_1,EMA: Tri-PM,
+tripm_2,EMA: Tri-PM,
+tripm_3,EMA: Tri-PM,
+tripm_4,EMA: Tri-PM,
+tripm_4_rev,EMA: Tri-PM,
+tripm_boldness,EMA: Tri-PM,EMA Tri-PM: Boldness
+tripm_meanness,EMA: Tri-PM,EMA Tri-PM: Meanness
+tripm_sum,EMA: Tri-PM,
+context_control,EMA: context,EMA context appraisal: control (1-5)
+context_quality,EMA: context,EMA context appraisal: quality (1-5)
+context_support,EMA: context,EMA context appraisal: support (1-5)
+context_threat,EMA: context,EMA context appraisal: threat (1-5)
+angry,EMA: mood / negative affect,"EMA mood (0-100, higher = more angry)"
+happy,EMA: mood / negative affect,"EMA mood (0-100, higher = more happy)"
+neg_affect_ema,EMA: mood / negative affect,"Standardized composite negative affect: reverse(happy,satisfied) + sad + angry (z-score)"
+sad,EMA: mood / negative affect,"EMA mood (0-100, higher = more sad)"
+satisfied,EMA: mood / negative affect,"EMA mood (0-100, higher = more satisfied)"
+dass_anxiety_baseline,baseline: DASS-21,DASS-21 Anxiety (baseline)
+dass_depression_baseline,baseline: DASS-21,DASS-21 Depression (baseline)
+dass_stress_baseline,baseline: DASS-21,DASS-21 Stress (baseline)
+esi_bf_baseline,baseline: ESI-BF,ESI-BF total score at baseline
+pid5_antagonism_baseline,baseline: PID-5 domains,"PID-5 domain Antagonism (baseline, EMA items removed)"
+pid5_detachment_baseline,baseline: PID-5 domains,"PID-5 domain Detachment (baseline, EMA items removed)"
+pid5_disinhibition_baseline,baseline: PID-5 domains,"PID-5 domain Disinhibition (baseline, EMA items removed)"
+pid5_negative_affect_baseline,baseline: PID-5 domains,"PID-5 domain Negative Affect (baseline, EMA items removed)"
+pid5_psychoticism_baseline,baseline: PID-5 domains,"PID-5 domain Psychoticism (baseline, EMA items removed)"
+course,id/meta,"Course the subject belongs to (Psicometria, Testing, Interventi, Clinica)"
+sex,id/meta,Biological sex as reported (F/M/other coding)
+user_id,id/meta,Anonymous subject code
+calendar_day,other,
+dass21_1,other,
+dass21_2,other,
+dass21_3,other,
+dass21_4,other,
+dass21_5,other,
+dass21_6,other,
+dass_anxiety,other,
+dass_depression,other,
+dass_stress,other,
+dass_sum,other,
+n_aff_items_answered,other,
+pid5_1,other,
+pid5_10,other,
+pid5_11,other,
+pid5_12,other,
+pid5_13,other,
+pid5_14,other,
+pid5_15,other,
+pid5_2,other,
+pid5_3,other,
+pid5_4,other,
+pid5_5,other,
+pid5_6,other,
+pid5_7,other,
+pid5_8,other,
+pid5_9,other,
+pid5_sum,other,
+scs1_pos,other,
+scs2_neg,other,
+scs3_pos,other,
+scs4_neg,other,
+scs5_neg,other,
+scs6_pos,other,
+scs7_pos,other,
+scs8_neg,other,
+vq_1,other,
+vq_2,other,
+vq_3,other,
+vq_4,other,
+bysubj_day,time/exam,Sequential EMA index within subject (if available)
+day,time/exam,Date of EMA response (YYYY-MM-DD)
+exam_period,time/exam,Exam proximity tag: baseline / pre_exam / post_exam
+hour,time/exam,Hour of EMA response (0-23)

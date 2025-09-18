@@ -1,0 +1,41 @@
+=== LOO comparison (elpd_loo higher is better) ===
+           elpd_diff se_diff
+fit_react    0.0       0.0  
+fit_comb    -3.5       1.4  
+fit_static -17.2       6.5  
+
+=== Bayes R2 ===
+     Estimate  Est.Error       Q2.5     Q97.5
+R2 0.05651291 0.02427838 0.01701791 0.1108105
+    Estimate  Est.Error      Q2.5     Q97.5
+R2 0.2266589 0.05365165 0.1208249 0.3321904
+    Estimate  Est.Error      Q2.5     Q97.5
+R2 0.2432879 0.05277335 0.1406811 0.3433443
+
+=== Coefficients (combined model) ===
+ Family: student 
+  Links: mu = identity; sigma = identity; nu = identity 
+Formula: dass_sum_delta ~ z_domain_negative_affect + z_domain_detachment + z_domain_antagonism + z_domain_disinhibition + z_domain_psychoticism + z_magnitude + z_asymmetry 
+   Data: dmod (Number of observations: 167) 
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Regression Coefficients:
+                         Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept                    0.48      0.18     0.12     0.84 1.00     8597     5747
+z_domain_negative_affect    -0.05      0.21    -0.46     0.37 1.00     7467     6058
+z_domain_detachment         -0.15      0.20    -0.53     0.23 1.00     9007     6673
+z_domain_antagonism         -0.03      0.20    -0.41     0.38 1.00     7065     5383
+z_domain_disinhibition       0.32      0.21    -0.10     0.73 1.00     7393     6514
+z_domain_psychoticism       -0.06      0.25    -0.55     0.44 1.00     5863     5354
+z_magnitude                  0.31      0.18    -0.03     0.66 1.00     8218     6033
+z_asymmetry                 -0.96      0.19    -1.33    -0.58 1.00     5994     5820
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     2.04      0.19     1.65     2.41 1.00     5483     5776
+nu       12.12      9.14     3.46    38.27 1.00     5774     6346
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).

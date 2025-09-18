@@ -1,0 +1,318 @@
+data {
+  int<lower=1> I;                 // soggetti
+  int<lower=1> N_obs;             // osservazioni EMA
+  int<lower=1> K;                 // items = 4 (happy, sad, satisfied, angry)
+  int<lower=1> P;                 // periodi = 3 (1=base,2=pre,3=post)
+  int<lower=1> D;                 // dimensioni EMA a livello soggetto = 5
+
+  // Item responses ordinali 1..7 (solo non-mancanti, in long)
+  int<lower=1> N_items;
+  array[N_items] int<lower=1, upper=7> y_item;
+  array[N_items] int<lower=1, upper=K> item_id;
+  array[N_items] int<lower=1, upper=N_obs> obs_id;
+
+  // Mappa osservazione -> soggetto/periodo
+  array[N_obs] int<lower=1, upper=I> subject;
+  array[N_obs] int<lower=1, upper=P> period;
+
+  // Misurazioni EMA continue (dimensioni 2..5) su subset di osservazioni
+  int<lower=0> M_ema;
+  array[M_ema] real ema_val;
+  array[M_ema] int<lower=2, upper=D> ema_dim;
+  array[M_ema] int<lower=1, upper=N_obs> ema_obs;
+
+  // Predittori baseline (I x 5), già z-score
+  matrix[I, D] X_base;
+
+  // Genere: 1=femmina, 0=maschio
+  array[I] int<lower=0, upper=1> female;
+
+  // Numero di interazioni baseline x EMA (triangolare superiore)
+  int<lower=0> N_interact;
+
+  // Interruttore per includere le EMA nel modello di fragilità
+  real<lower=0, upper=1> use_ema;
+}
+
+parameters {
+  // --- Misurazione ordinale per i 4 item ---
+  vector[K] nu;
+  vector[3] lambda_raw;
+  array[K] ordered[6] tau;
+
+  // --- Fattori di metodo (non-centered) ---
+  real<lower=0> sigma_pos;
+  real<lower=0> sigma_neg;
+  vector[N_obs] z_pos;
+  vector[N_obs] z_neg;
+
+  // --- Effetti di periodo (non-centered) ---
+  real gamma_pre;
+  real gamma_post;
+  real<lower=0> tau_pre;
+  real<lower=0> tau_post;
+  vector[I] z_delta_pre;
+  vector[I] z_delta_post;
+
+  // --- Variabilità intra-periodo (stato ema) ---
+  real<lower=0> sigma_state;
+  real<lower=1> nu_state;
+  vector[N_obs] eps_obs; // t_ν(0,1)
+
+  // --- Tratti EMA per soggetto (non-centered) ---
+  matrix[I, D] z_theta;
+  vector<lower=0>[D] sigma_ema;
+
+  // === Modello di fragilità ===
+  real a_frag;                 // intercetta
+  vector[D] b_base;            // effetti principali baseline
+  vector[D] c_ema;             // effetti principali EMA
+  real b_female;               // effetto principale genere
+  vector[D] b_base_female;     // interazioni genere x baseline
+  vector[D] c_ema_female;      // interazioni genere x EMA
+  vector[N_interact] b_interact;// interazioni baseline x EMA (se presenti)
+
+  // Effetti della variabilità emotiva
+  real b_var_base;
+  real b_var_ema;
+  real b_var_female;
+
+  // Shrinkage (scale globali)
+  real<lower=0> tau_base;
+  real<lower=0> tau_ema;
+  real<lower=0> tau_interact;
+
+  // Residui robusti per fragilità
+  real<lower=0> sigma_diff;
+  real<lower=1> nu_diff;
+}
+
+transformed parameters {
+  vector[K] lambda;
+  vector[N_obs] eta;          // stato latente (negative affect) per osservazione
+  vector[I] delta_pre;        // soggetto-specific period shifts
+  vector[I] delta_post;
+  vector[N_obs] u_pos;        // fattori di metodo (ricostruiti)
+  vector[N_obs] u_neg;
+  matrix[I, D] theta;         // tratti EMA (ricostruiti)
+  vector[I] diff_frag;        // fragilità = (pre) - (post)
+  vector[I] var_emotional;    // varianza intra-soggetto di eta
+
+  // Carichi item (vincoli di segno)
+  lambda[2] = 1.0;                  // sad (riferimento)
+  lambda[4] =  exp(lambda_raw[3]);  // angry > 0
+  lambda[1] = -exp(lambda_raw[1]);  // happy < 0
+  lambda[3] = -exp(lambda_raw[2]);  // satisfied < 0
+
+  // Non-centered reconstructions
+  u_pos = sigma_pos * z_pos;
+  u_neg = sigma_neg * z_neg;
+  delta_pre  = tau_pre  * z_delta_pre;
+  delta_post = tau_post * z_delta_post;
+
+  // Tratti EMA per soggetto (scaling per-dimension)
+  for (d in 1:D) {
+    for (i in 1:I)
+      theta[i, d] = sigma_ema[d] * z_theta[i, d];
+  }
+
+  // Stato latente per osservazione
+  for (n in 1:N_obs) {
+    int i = subject[n];
+    int p = period[n];
+    real m_pre  = (p == 2) ? (gamma_pre + delta_pre[i])  : 0.0;
+    real m_post = (p == 3) ? (gamma_post + delta_post[i]) : 0.0;
+    eta[n] = theta[i, 1] + m_pre + m_post + sigma_state * eps_obs[n];
+  }
+
+  // Fragilità come differenza pre-post (offset)
+  for (i in 1:I)
+    diff_frag[i] = (gamma_pre + delta_pre[i]) - (gamma_post + delta_post[i]);
+
+  // Varianza intra-soggetto di eta
+  for (i in 1:I) {
+    int n_subj_obs = 0;
+    real mean_eta = 0;
+    // prima passata: media
+    for (n in 1:N_obs)
+      if (subject[n] == i) { mean_eta += eta[n]; n_subj_obs += 1; }
+    if (n_subj_obs > 0) mean_eta /= n_subj_obs;
+    // seconda passata: varianza
+    if (n_subj_obs > 1) {
+      real ss = 0;
+      for (n in 1:N_obs)
+        if (subject[n] == i) ss += square(eta[n] - mean_eta);
+      var_emotional[i] = ss / (n_subj_obs - 1);
+    } else var_emotional[i] = 0.0;
+  }
+}
+
+model {
+  // --- Controllo coerenza N_interact ---
+  if (N_interact != D * (D - 1) / 2)
+    reject("N_interact (", N_interact, ") != D*(D-1)/2 (", D * (D - 1) / 2, ")");
+
+  // Priors misurazione item
+  nu ~ normal(0, 1);
+  lambda_raw ~ normal(0, 0.3);
+  for (k in 1:K) tau[k] ~ normal(0, 1);
+
+  // Priors fattori di metodo (più stretti)
+  sigma_pos ~ exponential(2);
+  sigma_neg ~ exponential(2);
+  z_pos ~ normal(0, 1);
+  z_neg ~ normal(0, 1);
+
+  // Priors effetti di periodo (più stretti; non-centered)
+  gamma_pre  ~ normal(0, 1);
+  gamma_post ~ normal(0, 1);
+  tau_pre  ~ exponential(2);
+  tau_post ~ exponential(2);
+  z_delta_pre  ~ normal(0, 1);
+  z_delta_post ~ normal(0, 1);
+
+  // Stato latente EMA (robusto)
+  sigma_state ~ exponential(2);
+  nu_state ~ gamma(2, 0.1);         // media ~20, ancora abbastanza robusto
+  eps_obs ~ student_t(nu_state, 0, 1);
+
+  // Tratti EMA per soggetto (più stretti; non-centered)
+  to_vector(z_theta) ~ normal(0, 1);
+  sigma_ema ~ exponential(2);
+
+  // Misurazioni EMA continue
+  for (m in 1:M_ema) {
+    int i = subject[ema_obs[m]];
+    int d = ema_dim[m];
+    ema_val[m] ~ normal(theta[i, d], sigma_ema[d]);
+  }
+
+  // Likelihood item ordinali
+  {
+    vector[N_items] linpred;
+    for (n in 1:N_items) {
+      real m = (item_id[n] == 1 || item_id[n] == 3) ? u_pos[obs_id[n]] : u_neg[obs_id[n]];
+      linpred[n] = nu[item_id[n]] + lambda[item_id[n]] * eta[obs_id[n]] + m;
+    }
+    y_item ~ ordered_logistic(linpred, tau[item_id]);
+  }
+
+  // Priors fragilità (più regolarizzati)
+  a_frag ~ normal(0, 1.5);
+  b_female ~ normal(0, 0.5);
+  b_var_base ~ normal(0, 0.4);
+  b_var_ema ~ normal(0, 0.4);
+  b_var_female ~ normal(0, 0.4);
+
+  tau_base ~ exponential(3);      // shrinkage più forte
+  tau_ema ~ exponential(3);
+  tau_interact ~ exponential(4);
+
+  b_base ~ normal(0, tau_base);
+  c_ema ~ normal(0, tau_ema);
+  b_base_female ~ normal(0, tau_base);
+  c_ema_female ~ normal(0, tau_ema);
+  b_interact ~ normal(0, tau_interact);
+
+  sigma_diff ~ exponential(2);
+  nu_diff ~ gamma(2, 0.2);        // media ~10 (un po’ più pesante della normale)
+
+  // Regressione della fragilità (student-t robusta)
+  for (i in 1:I) {
+    real interact_term = 0.0;
+    int idx = 1;
+    for (d1 in 1:(D-1)) {
+      for (d2 in (d1+1):D) {
+        interact_term += b_interact[idx] * X_base[i, d1] * theta[i, d2];
+        idx += 1;
+      }
+    }
+    real mu_frag =
+      a_frag +
+      (X_base[i] * b_base) +
+      use_ema * (theta[i] * c_ema) +
+      female[i] * b_female +
+      female[i] * (X_base[i] * b_base_female) +
+      female[i] * use_ema * (theta[i] * c_ema_female) +
+      use_ema * interact_term +
+      var_emotional[i] * (b_var_base + female[i] * b_var_female) +
+      use_ema * var_emotional[i] * b_var_ema;
+
+    target += student_t_lpdf(diff_frag[i] | nu_diff, mu_frag, sigma_diff);
+  }
+}
+
+generated quantities {
+  // Predizione attesa della fragilità e R2
+  vector[I] mu_frag_hat;
+  real R2_frag;
+
+  // Replicati
+  vector[I] y_rep;                // fragilità replicata
+  vector[N_items] y_item_rep;     // item ordinali replicati
+
+  // Log-likelihood
+  vector[N_obs] log_lik_obs;      // per osservazione EMA (items aggregati per obs)
+  vector[I]     log_lik_subj;     // *** per soggetto sulla fragilità ***
+
+  // Init
+  for (n in 1:N_obs) log_lik_obs[n] = 0;
+  for (i in 1:I)     log_lik_subj[i] = 0;
+
+  // Log-lik osservazioni (item)
+  {
+    for (n in 1:N_items) {
+      real m = (item_id[n] == 1 || item_id[n] == 3) ? u_pos[obs_id[n]] : u_neg[obs_id[n]];
+      real lp = nu[item_id[n]] + lambda[item_id[n]] * eta[obs_id[n]] + m;
+      // sommo per osservazione EMA
+      log_lik_obs[obs_id[n]] += ordered_logistic_lpmf(y_item[n] | lp, tau[item_id[n]]);
+    }
+  }
+
+  // Predizioni medie e R2 su fragilità
+  {
+    real ss_tot = 0;
+    real ss_res = 0;
+    real mean_diff = 0;
+    for (i in 1:I) mean_diff += diff_frag[i];
+    mean_diff /= I;
+
+    for (i in 1:I) {
+      real interact_term = 0.0;
+      int idx = 1;
+      for (d1 in 1:(D-1)) {
+        for (d2 in (d1+1):D) {
+          interact_term += b_interact[idx] * X_base[i, d1] * theta[i, d2];
+          idx += 1;
+        }
+      }
+      mu_frag_hat[i] =
+        a_frag +
+        (X_base[i] * b_base) +
+        use_ema * (theta[i] * c_ema) +
+        female[i] * b_female +
+        female[i] * (X_base[i] * b_base_female) +
+        female[i] * use_ema * (theta[i] * c_ema_female) +
+        use_ema * interact_term +
+        var_emotional[i] * (b_var_base + female[i] * b_var_female) +
+        use_ema * var_emotional[i] * b_var_ema;
+
+      ss_tot += square(diff_frag[i] - mean_diff);
+      ss_res += square(diff_frag[i] - mu_frag_hat[i]);
+
+      // *** log-lik per soggetto sulla fragilità ***
+      log_lik_subj[i] = student_t_lpdf(diff_frag[i] | nu_diff, mu_frag_hat[i], sigma_diff);
+    }
+    R2_frag = 1 - ss_res / (ss_tot + 1e-9);
+  }
+
+  // Replicati per posterior predictive checks
+  for (i in 1:I) {
+    y_rep[i] = student_t_rng(nu_diff, mu_frag_hat[i], sigma_diff);
+  }
+  for (n in 1:N_items) {
+    real m = (item_id[n] == 1 || item_id[n] == 3) ? u_pos[obs_id[n]] : u_neg[obs_id[n]];
+    real lp = nu[item_id[n]] + lambda[item_id[n]] * eta[obs_id[n]] + m;
+    y_item_rep[n] = ordered_logistic_rng(lp, tau[item_id[n]]);
+  }
+}

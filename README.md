@@ -3,7 +3,8 @@ Progetto che integra misure basali di tratto (PID-5) con registrazioni ecologich
 
 ------
 
-Lo scopo di questo progetto è di valutare se le misure "dinamiche" PID-5 somministrate ripetutamente nel tempo con la metodologia EMA sono più efficaci nell'individuare partecipanti che hanno un atteggiamento/comportamento disadattato/disfunzionale rispetto alla somministrazione "statica" del PID-5 una volta soltanto. La somministrazione "statica" del PID-5 include il test completo di 220 item (in realtà dovrei escludere gli item che uso per l'EMA); la somministrazione "dinamica" include un subset di 15 item del PID-5 (3 item per ciascuno dei 5 domini) -- tali item sono stati individuati con un'analisi fattoriale su un campione diverso (ma sempre studenti universitari) di partecipanti. I dati di cui dispongo sono i seguenti: [1] "user_id" "esi_bf" "domain_negative_affect" 
+Lo scopo di questo progetto è di valutare se le misure "dinamiche" PID-5 somministrate ripetutamente nel tempo con la metodologia EMA sono più efficaci nell'individuare partecipanti che hanno un atteggiamento/comportamento disadattato/disfunzionale rispetto alla somministrazione "statica" del PID-5 una volta soltanto. La somministrazione "statica" del PID-5 include il test completo di 220 item (in realtà dovrei escludere gli item che uso per l'EMA); la somministrazione "dinamica" include un subset di 15 item del PID-5 (3 item per ciascuno dei 5 domini) -- tali item sono stati individuati con un'analisi fattoriale su un campione diverso (ma sempre studenti universitari) di partecipanti. I dati di cui dispongo sono i seguenti: 
+[1] "user_id" "esi_bf" "domain_negative_affect" 
 [4] "domain_detachment" "domain_antagonism" "domain_disinhibition" 
 [7] "domain_psychoticism" "happy" "sad" 
 [10] "satisfied" "angry" "pid5_13" 
@@ -53,7 +54,41 @@ Ci sono le misure EMA del COPE (alcuni item): "cope_avoid"                "cope_
 
 C’è la self compassion di stato, nelle sue due componenti: "cs_pos"                    "ucs_neg" 
 
+Le misure si possono separare in 3 "finestre contestuali" che suscitano una emotività/reattività diversa. I partecipanti sono tutti studenti universitari. Il primo contesto temporale è lontano da un esame universitario. Il secondo contesto è "il giorno prima dell'esame". Il terzo contesto temporale è subito dopo l'esame (avendo terminato l'esame, ovvero il giorno dopo).
+
 Essendo uno studio EMA, il data set contiene dati mancanti, quando un partecipante non ha risposto alla notifica. 
+
+
+
+ESI-BF ---------------------------------------------------------------------
+
+The Externalizing Spectrum Inventory-Brief Form (ESI-BF) is a 160-item questionnaire designed to assess the externalizing spectrum of psychopathology. It includes three subfactors: Disinhibition (ESI-BFDIS), Callous-Aggression (ESI-BFAGG), and Substance Abuse (ESI-BFSUB). The ESI-BF is used to evaluate tendencies towards impulsive, aggressive, and substance-related behaviors. Here's a more detailed breakdown: 
+
+- ESI-BFDIS (Disinhibition): This subscale consists of 20 items assessing general externalizing tendencies, including problematic impulsivity, irresponsibility, and proneness to boredom.
+- ESI-BFAGG (Callous-Aggression): This subscale contains 19 items that focus on traits like deficient empathy, relational aggression, and destructiveness.
+- ESI-BFSUB (Substance Abuse): This subscale includes 18 items specifically targeting problematic and recreational substance use, including alcohol and other drugs.
+
+The questionnaire uses a 4-point Likert scale for responses, ranging from "Not true at all" to "Completely true". The ESI-BF is valuable for research on the correlates and mechanisms of externalizing behaviors like risk-taking, delinquency, aggression, and substance abuse, according to research papers from the American Psychological Association. 
+
+Nello studio, esi_bf è ESI-BFSUB.
+
+---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Un modo per esaminare un atteggiamento disfunzionale è quello di considerare la componente negativa della self-compassion. 
 
