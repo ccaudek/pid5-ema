@@ -1,3 +1,20 @@
+# Overview ----------------------------------------------------------------
+# Associated project: PID-5 and EMA
+# Script purpose: test the main hypothesis of the project: Do the EMA PID-5
+#   items improve the prediction of "psychological fragility" above and
+#   beyond the full PID-5 questionnaire at baseline?
+#
+# Written by: Corrado Caudek (corrado.caudek@unifi.it)
+# Version: 2025-09-19
+# Last update:
+# Status: In progress
+# Notes: I removed the items used in the the EMA administrations from the
+#   baseline PID-5 pool.
+
+# ------------------------------------------------------------
+# Load necessary libraries
+# ------------------------------------------------------------
+
 suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
@@ -28,7 +45,7 @@ stan_file_path <- here::here(
   "fragility_full_measurement_patched.stan"
 )
 
-SEED <- 20250918
+SEED <- 20250919
 
 # ------------------------------------------------------------
 # Utility
@@ -366,9 +383,9 @@ fit_A <- mod$variational(
   data = within(stan_data, {
     use_ema <- 0.0
   }),
-  seed = 20250917,
+  seed = 20250919,
   algorithm = "meanfield",
-  elbo_samples = 100,
+  elbo_samples = 1000, # era 100
   adapt_engaged = TRUE,
   tol_rel_obj = 0.001,
   eval_elbo = 100,
@@ -380,9 +397,9 @@ fit_B <- mod$variational(
   data = within(stan_data, {
     use_ema <- 1L
   }),
-  seed = 20250917,
+  seed = 20250919,
   algorithm = "meanfield",
-  elbo_samples = 100,
+  elbo_samples = 1000,
   adapt_engaged = TRUE,
   tol_rel_obj = 0.001,
   eval_elbo = 100,
@@ -421,34 +438,9 @@ loo_B_s <- loo::loo(ll_B_s, r_eff = NA)
 cmp_s <- loo::loo_compare(list(B = loo_B_s, A = loo_A_s))
 print(cmp_s)
 
-# Tabelline
-delta_elpd_o <- as.numeric(cmp_o["A", "elpd_diff"]) * -1
-se_diff_o <- as.numeric(cmp_o["A", "se_diff"])
+# Calcolo di delta_elpd_s e se_diff_s prima di usarle
 delta_elpd_s <- as.numeric(cmp_s["A", "elpd_diff"]) * -1
 se_diff_s <- as.numeric(cmp_s["A", "se_diff"])
-
-tbl <- tibble::tibble(
-  Level = c(
-    "Observation (items)",
-    "Subject (fragility)",
-    "ΔELPD (B−A) obs",
-    "ΔELPD (B−A) subj"
-  ),
-  elpd = c(
-    loo_A_o$estimates["elpd_loo", "Estimate"],
-    loo_A_s$estimates["elpd_loo", "Estimate"],
-    delta_elpd_o,
-    delta_elpd_s
-  ),
-  se = c(
-    loo_A_o$estimates["elpd_loo", "SE"],
-    loo_A_s$estimates["elpd_loo", "SE"],
-    se_diff_o,
-    se_diff_s
-  )
-) %>%
-  mutate(looic = -2 * elpd)
-print(tbl, n = Inf)
 
 cat(sprintf(
   "\nΔELPD_obs (B−A): %.2f ± %.2f | decisivo se |Δ|>2SE → %s",
@@ -462,6 +454,7 @@ cat(sprintf(
   se_diff_s,
   ifelse(abs(delta_elpd_s) > 2 * se_diff_s, "SÌ", "NO")
 ))
+
 
 # Posteriori dei coefficienti EMA
 cB <- as_draws_matrix(fit_B$draws("c_ema", format = "matrix"))
@@ -487,8 +480,8 @@ diff_rep_B <- fit_B$draws("diff_frag_rep", format = "matrix")
 
 # --- PPC 1: istogrammi categorie per item ---
 # osservato
-y_obs <- sd$y_item
-item_id <- sd$item_id
+y_obs <- stan_data$y_item
+item_id <- stan_data$item_id
 ppc_item_hist <- function(y_obs, y_rep_mat, item_name = "happy", k_id = 1) {
   # prendi un campione di 200 repliche per non sovraccaricare
   set.seed(1)
@@ -515,11 +508,10 @@ ppc_item_hist <- function(y_obs, y_rep_mat, item_name = "happy", k_id = 1) {
   list(obs = obs_df, rep = rep_df_long)
 }
 # Esempio: item 2 = sad
-ppc2_A <- ppc_item_hist(sd$y_item, y_rep_A, "sad", 2)
-ppc2_B <- ppc_item_hist(sd$y_item, y_rep_B, "sad", 2)
+ppc2_A <- ppc_item_hist(stan_data$y_item, y_rep_A, "sad", 2)
+ppc2_B <- ppc_item_hist(stan_data$y_item, y_rep_B, "sad", 2)
 
 # Plot base con ggplot
-library(ggplot2)
 plot_ppc_item <- function(ppc, title) {
   ggplot() +
     geom_violin(
