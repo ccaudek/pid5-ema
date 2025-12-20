@@ -1,0 +1,119 @@
+Rows: 6,226
+Columns: 117
+$ happy                         <int> 100, 85, 89, 71, 93, 88, 83, 100, 85, 100, 70, 82, 26, 92…  umore istantaneo EMA
+$ sad                           <int> 0, 11, 15, 16, 17, 0, 0, 0, 8, 0, 1, 0, 79, 2, 0, 0, 59, …. umore istantaneo
+$ satisfied                     <int> 64, 82, 32, 54, 40, 72, 73, 87, 49, 76, 57, 66, 39, 63, 7…. umore istantaneo
+$ angry                         <int> 16, 0, 100, 0, 67, 61, 50, 29, 66, 25, 57, 0, 100, 0, 0, …. umore istantaneo
+$ pid5_13                       <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_15                       <int> 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 2, 0, …  item del PID-5 EMA
+$ pid5_11                       <int> 0, 1, 2, 1, 2, 2, 3, 2, 3, 2, 3, 2, 2, 1, 1, 3, 2, 2, 3, …  item del PID-5 EMA
+$ pid5_3                        <int> 0, 2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 2, 2, 3, 0, 2, 2, 2, 2, …  item del PID-5 EMA
+$ pid5_2                        <int> 0, 2, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 2, 2, 3, 0, 3, 2, 2, …  item del PID-5 EMA
+$ pid5_7                        <int> 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_14                       <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, …  item del PID-5 EMA
+$ pid5_6                        <int> 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_4                        <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_12                       <int> 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_1                        <int> 0, 0, 0, 0, 1, 0, 0, 1, 2, 2, 0, 1, 0, 1, 1, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_9                        <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_5                        <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_8                        <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, …  item del PID-5 EMA
+$ pid5_10                       <int> 2, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 2, 1, 0, 2, 0, 3, …  item del PID-5 EMA
+$ tripm_1                       <int> 3, 3, 3, 2, 1, 1, 3, 3, 1, 3, 3, 3, 1, 3, 3, 3, 2, 3, 3, …  item del Triarchic Psychopathy Measure (TriPM) EMA
+$ tripm_3                       <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, …  item del Triarchic Psychopathy Measure (TriPM) EMA
+$ tripm_2                       <int> 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, …  item del Triarchic Psychopathy Measure (TriPM) EMA
+$ tripm_4                       <int> 3, 4, 4, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 4, 1, 4, 3, 4, 4, …  item del Triarchic Psychopathy Measure (TriPM) EMA
+$ dass21_2                      <int> 0, NA, 1, NA, NA, NA, 1, 1, NA, NA, 0, 1, 2, NA, 1, NA, 2…  item del DASS-21 EMA
+$ dass21_5                      <int> 0, NA, 0, NA, NA, NA, 0, 0, NA, NA, 0, 3, 0, NA, 0, NA, 1…  item del DASS-21 EMA
+$ dass21_3                      <int> 0, NA, 0, NA, NA, NA, 1, 1, NA, NA, 0, 0, 1, NA, 2, NA, 1…  item del DASS-21 EMA
+$ dass21_4                      <int> 0, NA, 0, NA, NA, NA, 1, 0, NA, NA, 2, 0, 0, NA, 1, NA, 0…  item del DASS-21 EMA
+$ dass21_6                      <int> 0, NA, 0, NA, NA, NA, 1, 0, NA, NA, 0, 0, 0, NA, 1, NA, 0…  item del DASS-21 EMA
+$ dass21_1                      <int> 0, NA, 2, NA, NA, NA, 1, 0, NA, NA, 0, 0, 0, NA, 2, NA, 0…  item del DASS-21 EMA
+$ scs3_pos                      <int> 1, NA, 3, NA, NA, NA, 2, 2, NA, NA, 2, 2, 2, NA, -2, NA, …. item State Self-Compassion Scale EMA
+$ scs5_neg                      <int> -3, NA, -3, NA, NA, NA, 2, -3, NA, NA, -2, -3, -3, NA, -1…. item State Self-Compassion Scale EMA
+$ scs7_pos                      <int> 2, NA, 2, NA, NA, NA, 1, 2, NA, NA, 1, 2, 2, NA, -3, NA, …. item State Self-Compassion Scale EMA
+$ scs4_neg                      <int> 1, NA, 1, NA, NA, NA, 3, 3, NA, NA, 2, 2, 2, NA, 2, NA, 2…. item State Self-Compassion Scale EMA
+$ scs2_neg                      <int> -3, NA, -2, NA, NA, NA, -1, -1, NA, NA, -2, -2, -1, NA, 2…. item State Self-Compassion Scale EMA
+$ scs1_pos                      <int> 2, NA, 2, NA, NA, NA, 1, 2, NA, NA, 2, 2, 1, NA, -3, NA, …. item State Self-Compassion Scale EMA
+$ scs8_neg                      <int> 2, NA, 2, NA, NA, NA, 3, 3, NA, NA, 2, 2, 2, NA, 2, NA, 2…. item State Self-Compassion Scale EMA
+$ scs6_pos                      <int> -3, NA, 1, NA, NA, NA, 2, -1, NA, NA, 2, 2, -1, NA, -2, N…. item State Self-Compassion Scale EMA
+$ vq_2                          <int> NA, 0, NA, 0, 0, 0, NA, NA, 0, 0, 0, 0, NA, 0, NA, 0, NA,…  item Victimization Questionnaire EMA
+$ vq_1                          <int> NA, 0, NA, 0, 0, 0, NA, NA, 0, 0, 0, 0, NA, 0, NA, 0, NA,…  item Victimization Questionnaire EMA
+$ vq_4                          <int> NA, 0, NA, 0, 0, 0, NA, NA, 0, 0, 0, 0, NA, 0, NA, 0, NA,…  item Victimization Questionnaire EMA
+$ vq_3                          <int> NA, 0, NA, 0, 0, 0, NA, NA, 0, 0, 0, 0, NA, 0, NA, 0, NA,…  item Victimization Questionnaire EMA
+$ cope_nvi_2                    <int> NA, 1, NA, 2, 2, 2, NA, NA, 2, 1, 1, 2, NA, 1, NA, 1, NA,…. item COPE-NVI EMA
+$ cope_nvi_7                    <int> NA, 3, NA, 2, 1, 2, NA, NA, 3, 2, 2, 2, NA, 2, NA, 2, NA,…. item COPE-NVI EMA
+$ cope_nvi_5                    <int> NA, 3, NA, 4, 3, 2, NA, NA, 4, 4, 4, 4, NA, 4, NA, 3, NA,…. item COPE-NVI EMA
+$ cope_nvi_8                    <int> NA, 3, NA, 3, 3, 2, NA, NA, 3, 3, 3, 3, NA, 3, NA, 3, NA,…. item COPE-NVI EMA
+$ cope_nvi_9                    <int> NA, 3, NA, 2, 1, 2, NA, NA, 2, 2, 2, 2, NA, 2, NA, 2, NA,…. item COPE-NVI EMA
+$ cope_nvi_10                   <int> NA, 2, NA, 2, 2, 3, NA, NA, 2, 3, 3, 3, NA, 3, NA, 3, NA,…. item COPE-NVI EMA
+$ cope_nvi_1                    <int> NA, 2, NA, 1, 4, 2, NA, NA, 1, 2, 2, 2, NA, 2, NA, 2, NA,…. item COPE-NVI EMA
+$ cope_nvi_3                    <int> NA, 3, NA, 2, 2, 2, NA, NA, 2, 2, 3, 3, NA, 3, NA, 3, NA,…. item COPE-NVI EMA
+$ cope_nvi_4                    <int> NA, 3, NA, 3, 3, 2, NA, NA, 2, 2, 3, 2, NA, 2, NA, 3, NA,…. item COPE-NVI EMA
+$ cope_nvi_6                    <int> NA, 3, NA, 3, 3, 4, NA, NA, 3, 4, 4, 3, NA, 4, NA, 4, NA,…. item COPE-NVI EMA
+$ user_id                       <chr> "ad_pa_2006_01_27_630", "ad_pa_2006_01_27_630", "ad_pa_20…. codice del soggetto
+$ day                           <IDate> 2025-03-12, 2025-03-15, 2025-03-19, 2025-03-22, 2025-03…. data EMA
+$ hour                          <int> 18, 9, 18, 21, 18, 9, 20, 12, 18, 10, 19, 21, 10, 9, 19, …  ora EMA
+$ calendar_day                  <int> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17…. giorno consecutivo per soggetto del calendario EMA
+$ bysubj_day                    <int> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17…. giorno consecutivo per soggetto del calendario EMA
+$ context_quality               <int> 1, -1, -1, 0, 0, 2, 1, 2, 0, 2, 1, 1, 1, 2, 2, 1, -1, 1, …. item for context valence EMA
+$ context_control               <int> 4, 4, 0, 3, 3, 4, 5, 5, 4, 4, 4, 4, 4, 5, 5, 4, 1, 5, 5, …  item for context valence EMA
+$ context_support               <int> 4, 4, 5, 3, 4, 4, 5, 5, 4, NA, 5, NA, NA, NA, NA, 3, 1, N…  item for context valence EMA
+$ context_threat                <int> 1, 2, 4, 2, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, …  item for context valence EMA
+$ pid5_sum                      <int> 3, 8, 10, 6, 11, 6, 8, 8, 12, 9, 9, 9, 6, 12, 16, 8, 9, 8…  somma totale PID-5 EMA
+$ pid5_negative_affectivity     <int> 0, 4, 6, 5, 7, 4, 5, 6, 7, 7, 5, 4, 4, 6, 4, 2, 5, 4, 4, …  dimensione PID-5 EMA
+$ pid5_detachment               <int> 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 1, 0, 1, 4, 0, 0, 0, 0, …  dimensione PID-5 EMA
+$ pid5_antagonism               <int> 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, …. dimensione PID-5 EMA
+$ pid5_disinhibition            <int> 2, 3, 4, 1, 4, 2, 3, 2, 3, 2, 3, 4, 2, 5, 2, 3, 4, 2, 6, …. dimensione PID-5 EMA
+$ pid5_psychoticism             <int> 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 3, 0, 2, 1, …. dimensione PID-5 EMA
+$ ipv_sum                       <int> NA, 0, NA, 0, 0, 0, NA, NA, 0, 0, 0, 0, NA, 0, NA, 0, NA,…. somma totale Victimization Questionnaire EMA
+$ tripm_4_rev                   <int> 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 4, 1, 2, 1, 1, …. item reversed del Triarchic Psychopathy Measure (TriPM) EMA
+$ tripm_sum                     <int> 9, 9, 9, 7, 7, 7, 9, 9, 7, 9, 8, 8, 6, 9, 9, 9, 7, 9, 9, …. somma totale Triarchic Psychopathy Measure (TriPM) EMA
+$ tripm_boldness                <int> 5, 4, 4, 3, 2, 2, 4, 4, 2, 4, 4, 4, 2, 4, 6, 4, 3, 4, 4, …. dimensione Triarchic Psychopathy Measure (TriPM) EMA
+$ tripm_meanness                <int> 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 6, 2, 3, 2, 2, …. dimensione Triarchic Psychopathy Measure (TriPM) EMA
+$ dass_sum                      <int> 0, NA, 3, NA, NA, NA, 5, 2, NA, NA, 2, 4, 3, NA, 7, NA, 4…. somma totale DASS-21 EMA
+$ dass_stress                   <int> 0, NA, 3, NA, NA, NA, 2, 1, NA, NA, 0, 1, 2, NA, 3, NA, 2…. dimensione DASS-21 EMA
+$ dass_depression               <int> 0, NA, 0, NA, NA, NA, 2, 1, NA, NA, 2, 0, 1, NA, 3, NA, 1…. dimensione DASS-21 EMA
+$ dass_anxiety                  <int> 0, NA, 0, NA, NA, NA, 1, 0, NA, NA, 0, 3, 0, NA, 1, NA, 1…. dimensione DASS-21 EMA
+$ cope_10_rev                   <int> NA, 3, NA, 3, 3, 2, NA, NA, 3, 2, 2, 2, NA, 2, NA, 2, NA,…. item reversed del COPE-NVI EMA
+$ cope_avoid                    <int> NA, 3, NA, 3, 6, 4, NA, NA, 3, 3, 3, 4, NA, 3, NA, 3, NA,…. subscale COPE-NVI EMA
+$ cope_prob_or                  <int> NA, 6, NA, 5, 5, 4, NA, NA, 4, 4, 6, 5, NA, 5, NA, 6, NA,…. subscale COPE-NVI EMA
+$ cope_social_support           <int> NA, 6, NA, 7, 6, 6, NA, NA, 7, 8, 8, 7, NA, 8, NA, 7, NA,…. subscale COPE-NVI EMA
+$ cope_positive_att             <int> NA, 6, NA, 5, 4, 4, NA, NA, 6, 5, 5, 5, NA, 5, NA, 5, NA,…. subscale COPE-NVI EMA
+$ cope_trascendent_or           <int> NA, 6, NA, 5, 4, 4, NA, NA, 5, 4, 4, 4, NA, 4, NA, 4, NA,…. subscale COPE-NVI EMA
+$ cs_pos                        <int> 2, NA, 8, NA, NA, NA, 6, 5, NA, NA, 7, 8, 4, NA, -10, NA,…. somma positiva State Self-Compassion Scale EMA
+$ ucs_neg                       <int> -3, NA, -2, NA, NA, NA, 7, 2, NA, NA, 0, -1, 0, NA, 5, NA…. somma negativa State Self-Compassion Scale EMA
+$ rosenberg_score_baseline      <int> 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 2…. Rosenberg Self-Esteem Scale baseline
+$ self_kindness_baseline        <int> 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 1…. Self-Compassion Scale Self-Kindness baseline
+$ common_humanity_baseline      <int> 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 1…. Self-Compassion Scale Common Humanity baseline
+$ mindfulness_baseline          <int> 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, …. Self-Compassion Scale Mindfulness baseline
+$ self_judgment_baseline        <int> 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 1…. Self-Compassion Scale Self-Judgment baseline
+$ isolation_baseline            <int> 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 1…. Self-Compassion Scale Isolation baseline
+$ over_identification_baseline  <int> 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 1…. Self-Compassion Scale Over-Identification baseline
+$ scs_total_score_baseline      <int> 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 6…. Self-Compassion Scale Total Score baseline
+$ boldness_baseline             <int> 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 2…. TriPM Boldness baseline
+$ meanness_baseline             <int> 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, …. TriPM Meanness baseline
+$ dass_stress_baseline          <int> 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 1…. DASS-21 Stress baseline
+$ dass_anxiety_baseline         <int> 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, …. DASS-21 Anxiety baseline
+$ dass_depression_baseline      <int> 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, …. DASS-21 Depression baseline
+$ pid5_negative_affect_baseline <int> 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 1…. PID-5 Negative Affectivity baseline
+$ pid5_detachment_baseline      <int> 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 2…. PID-5 Detachment baseline
+$ pid5_antagonism_baseline      <int> 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 2…. PID-5 Antagonism baseline
+$ pid5_disinhibition_baseline   <int> 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 2…. PID-5 Disinhibition baseline
+$ pid5_psychoticism_baseline    <int> 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 3…. PID-5 Psychoticism baseline
+$ esi_bf_baseline               <int> 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 1…. Externalizing Spectrum Inventory BF baseline
+$ inhibitory_ius_baseline       <int> 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 1…. Inhibitory IUS baseline
+$ prospective_ius_baseline      <int> 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 1…. Prospective IUS baseline
+$ ius_tot_baseline              <int> 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…. IUS Total baseline
+$ .is_ema                       <lgl> TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRU…. indicatore EMA
+$ n_ema                         <int> 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 3…. numero di EMA completate per soggetto
+$ course                        <chr> "Psicometria", "Psicometria", "Psicometria", "Psicometria… insegnamento
+$ sex                           <chr> "Femmina", "Femmina", "Femmina", "Femmina", "Femmina", "F… sesso del soggetto
+$ date_meta                     <IDate> 2025-04-01, 2025-04-01, 2025-04-01, 2025-04-01, 2025-04… data di completamento del questionario EMA
+$ exam_period                   <chr> "baseline", "baseline", "baseline", "baseline", "baseline…. periodo di somministrazione EMA
+$ .__subj__                     <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …. ignorare
+$ .__per__                      <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 1, 1, 1, 1, 1, 1, 1, …. ignorare
+$ .__happy__                    <int> 7, 6, 7, 5, 7, 7, 6, 7, 6, 7, 5, 6, 2, 7, 7, 6, 4, 5, 6, …. ignorare
+$ .__sad__                      <int> 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 6, 1, 1, 1, 5, 1, 1, …. ignorare
+$ .__satisfied__                <int> 5, 6, 3, 4, 3, 6, 6, 7, 4, 6, 4, 5, 3, 5, 6, 6, 1, 5, 5, …. ignorare
+$ .__angry__                    <int> 2, 1, 7, 1, 5, 5, 4, 3, 5, 2, 4, 1, 7, 1, 1, 1, 4, 1, 1, …. ignorare

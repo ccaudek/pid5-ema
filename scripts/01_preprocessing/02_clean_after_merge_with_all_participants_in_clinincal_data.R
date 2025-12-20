@@ -39,10 +39,29 @@ META_PATH <- here::here("data", "raw", "meta", "all_combined_sex_NEW_1.xlsx")
 EXAM_TAGS_PATH <- here::here("data", "raw", "meta", "exam_periods.csv")
 
 # Output
-OUT_CLEAN_RDS <- here::here("data", "processed", "ema_plus_scales_cleaned.rds")
-OUT_CLEAN_CSV <- here::here("data", "processed", "ema_plus_scales_cleaned.csv")
-OUT_LOG_EXCL <- here::here("data", "processed", "ema_exclusion_log.csv")
-OUT_QA_TXT <- here::here("data", "processed", "ema_cleaning_QA.txt")
+OUT_CLEAN_RDS <- here::here(
+  "data",
+  "processed",
+  "ema_plus_scales_cleaned_NO_PREPOST_FILTER.rds"
+)
+
+OUT_CLEAN_CSV <- here::here(
+  "data",
+  "processed",
+  "ema_plus_scales_cleaned_NO_PREPOST_FILTER.csv"
+)
+
+OUT_LOG_EXCL <- here::here(
+  "data",
+  "processed",
+  "ema_exclusion_log_NO_PREPOST_FILTER.csv"
+)
+
+OUT_QA_TXT <- here::here(
+  "data",
+  "processed",
+  "ema_cleaning_QA_NO_PREPOST_FILTER.txt"
+)
 
 # ============================
 # 1) LETTURA RAW TOTALE
@@ -71,39 +90,39 @@ dat_raw <- dat_raw %>%
 # ============================
 
 careless_ids <- c(
-  # "ma_se_2005_11_14_490",
-  # "reve20041021036",
-  # "di_ma_2005_10_20_756",
-  # "pa_sc_2005_09_10_468",
-  # "il_re_2006_01_18_645",
-  # "so_ma_2003_10_13_804",
-  # "lo_ca_2005_05_07_05_437",
-  # "va_ma_2005_05_31_567",
-  # "no_un_2005_06_29_880",
-  # "an_bo_1988_08_24_166",
-  # "st_ma_2004_04_21_426",
-  # "an_st_2005_10_16_052",
-  # "vi_de_2002_12_30_067",
-  # "gi_ru_2005_03_08_033",
-  # "al_mi_2005_03_05_844",
-  # "la_ma_2006_01_31_787",
-  # "gi_lo_2004_06_27_237",
-  # "ch_bi_2001_01_28_407",
-  # "al_pe_2001_04_20_079",
-  # "le_de_2003_09_05_067",
-  # "fe_gr_2002_02_19_434",
-  # "ma_ba_2002_09_09_052",
-  # "ca_gi_2003_09_16_737",
-  # "an_to_2003_08_06_114",
-  # "al_se_2003_07_28_277",
-  # "ja_tr_2002_10_06_487",
-  # "el_ci_2002_02_15_057",
-  # "se_ti_2000_03_04_975",
-  # "co_ga_2003_10_29_614",
-  # "al_ba_2003_18_07_905",
-  # "bi_ro_2003_09_07_934",
-  # "an_va_2004_04_08_527",
-  # "ev_cr_2003_01_27_573"
+  "ma_se_2005_11_14_490",
+  "reve20041021036",
+  "di_ma_2005_10_20_756",
+  "pa_sc_2005_09_10_468",
+  "il_re_2006_01_18_645",
+  "so_ma_2003_10_13_804",
+  "lo_ca_2005_05_07_05_437",
+  "va_ma_2005_05_31_567",
+  "no_un_2005_06_29_880",
+  "an_bo_1988_08_24_166",
+  "st_ma_2004_04_21_426",
+  "an_st_2005_10_16_052",
+  "vi_de_2002_12_30_067",
+  "gi_ru_2005_03_08_033",
+  "al_mi_2005_03_05_844",
+  "la_ma_2006_01_31_787",
+  "gi_lo_2004_06_27_237",
+  "ch_bi_2001_01_28_407",
+  "al_pe_2001_04_20_079",
+  "le_de_2003_09_05_067",
+  "fe_gr_2002_02_19_434",
+  "ma_ba_2002_09_09_052",
+  "ca_gi_2003_09_16_737",
+  "an_to_2003_08_06_114",
+  "al_se_2003_07_28_277",
+  "ja_tr_2002_10_06_487",
+  "el_ci_2002_02_15_057",
+  "se_ti_2000_03_04_975",
+  "co_ga_2003_10_29_614",
+  "al_ba_2003_18_07_905",
+  "bi_ro_2003_09_07_934",
+  "an_va_2004_04_08_527",
+  "ev_cr_2003_01_27_573"
 )
 
 # ============================
@@ -226,8 +245,6 @@ keep_step1 <- dat_final %>%
   dplyr::pull(user_id)
 
 dat_step1 <- dat_final %>% dplyr::filter(user_id %in% keep_step1)
-length(unique(dat_step1$user_id))
-#[1] 543
 
 # ============================
 # 6) COSTRUZIONE METRICHE QUALITÀ per soggetto
@@ -339,11 +356,6 @@ quality_by_user <- items_long %>%
 excl_quality <- quality_by_user %>%
   transmute(
     user_id,
-    reason_coverage = ifelse(
-      n_per_2 < MIN_PRE | n_per_3 < MIN_POST,
-      sprintf("low_coverage(pre<%d or post<%d)", MIN_PRE, MIN_POST),
-      NA_character_
-    ),
     reason_low_sd = ifelse(
       sd_within_1_7 < MIN_SD_NA,
       sprintf("low_within_sd(<%.2f)", MIN_SD_NA),
@@ -355,9 +367,13 @@ excl_quality <- quality_by_user %>%
       NA_character_
     )
   ) %>%
-  pivot_longer(-user_id, names_to = "rname", values_to = "reason") %>%
-  filter(!is.na(reason)) %>%
-  select(user_id, reason)
+  tidyr::pivot_longer(
+    -user_id,
+    names_to = "rname",
+    values_to = "reason"
+  ) %>%
+  dplyr::filter(!is.na(reason)) %>%
+  dplyr::select(user_id, reason)
 
 # Unifica log step1 + step2
 excl_log <- bind_rows(excl_log_step1, excl_quality) %>%
@@ -370,9 +386,6 @@ keep_ids <- dat_step1 %>%
 
 dat_clean <- dat_step1 %>%
   filter(user_id %in% keep_ids)
-
-length(unique(dat_clean$user_id))
-# [1] 239
 
 # ============================
 # 8) QA ESSENZIALE

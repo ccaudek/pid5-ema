@@ -1,0 +1,419 @@
+---
+title: "Demo didattica: perché le EMA-PRE migliorano la predizione"
+subtitle: "Confronto modello ridotto vs. modello completo con **brms**"
+author: "Corrado Caudek"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: show
+  pdf:
+    toc: true
+    number-sections: true
+    geometry: margin=2.5cm
+execute:
+  echo: true
+  message: false
+  warning: false
+filters: []
+lang: it
+---
+
+# Obiettivo
+
+Mostrare, con **dati reali ma semplificati**, che aggiungere le **EMA-PRE** (riassunte in **PC1**) migliora la capacità predittiva rispetto ai soli **tratti di baseline**.  
+Useremo due modelli gaussiani (*brms*), **ridotto** vs **completo**, e confronteremo le prestazioni con **10-fold cross-validation** (oltre a PSIS-LOO come riferimento).
+
+> Idea chiave didattica: per evitare *leakage*, i predittori EMA sono calcolati **solo nel PRE**, mentre l'outcome è la **variazione** tra POST e PRE (Δy).
+
+# Setup
+
+```{r}
+#| label: setup
+# Pacchetti
+suppressPackageStartupMessages({
+  library(dplyr); library(tidyr); library(readr)
+  library(brms); library(loo)
+  library(rio); library(here)
+  library(knitr)
+})
+
+# Utility
+z_ <- function(x) { m <- mean(x, na.rm=TRUE); s <- sd(x, na.rm=TRUE); if(!is.finite(s)||s==0) x-m else (x-m)/s }
+winsor <- function(x, p = c(.05, .95)) {
+  qs <- quantile(x, probs = p, na.rm = TRUE)
+  pmin(pmax(x, qs[[1]]), qs[[2]])
+}
+rob_mean <- function(x, trim=.20) mean(x, trim=trim, na.rm=TRUE)
+as_item_1_7 <- function(x) {
+  x <- suppressWarnings(readr::parse_number(as.character(x)))
+  if (all(is.na(x))) return(as.integer(x))
+  if (all(x[is.finite(x)] %in% 1:7)) return(as.integer(x))
+  xmin <- min(x, na.rm=TRUE); xmax <- max(x, na.rm=TRUE)
+  y <- 1 + 6 * (x - xmin) / (xmax - xmin)
+  as.integer(round(pmax(1, pmin(7, y))))
+}
+first_non_na <- function(v) { i <- which(!is.na(v))[1]; if(length(i)) v[i] else NA }
+```
+
+# Dati
+
+```{r}
+#| label: load-data
+# Adatta il path se necessario
+d <- rio::import(here::here("data","processed","ema_plus_scales_cleaned.csv"))
+
+# id e periodo
+id_col <- names(d)[names(d) %in% c("user_id","id","subject_id","participant_id")][1]
+stopifnot(length(id_col)==1)
+per_col <- names(d)[names(d) %in% c("exam_period","period","phase")][1]
+stopifnot(length(per_col)==1)
+
+d$subj <- as.integer(factor(d[[id_col]]))
+per_raw <- tolower(as.character(d[[per_col]]))
+d$period <- dplyr::case_when(
+  per_raw %in% c("baseline","base","t0","bl") ~ "baseline",
+  per_raw %in% c("pre","pre_exam","pre-exam","preexam") ~ "pre",
+  per_raw %in% c("post","post_exam","post-exam","postexam") ~ "post",
+  TRUE ~ "baseline"
+)
+
+# Items per NA
+happy  <- names(d)[tolower(names(d)) %in% c("happy","happiness","felice","contento")][1]
+sad    <- names(d)[tolower(names(d)) %in% c("sad","sadness","triste")][1]
+satis  <- names(d)[tolower(names(d)) %in% c("satisfied","satisfaction","soddisfatto","soddisfazione")][1]
+angry  <- names(d)[tolower(names(d)) %in% c("angry","anger","arrabbiato","rabbia")][1]
+stopifnot(all(!is.na(c(happy,sad,satis,angry))))
+
+d$happy <- as_item_1_7(d[[happy]])
+d$sad   <- as_item_1_7(d[[sad]])
+d$satis <- as_item_1_7(d[[satis]])
+d$angry <- as_item_1_7(d[[angry]])
+
+keep <- with(d, is.finite(happy) & is.finite(sad) & is.finite(satis) & is.finite(angry))
+d <- d[keep, , drop=FALSE]
+
+NA_score <- (7 - d$happy) + (7 - d$satis) + d$sad + d$angry
+d$y <- z_(NA_score)
+
+# Sesso (0/1) a livello soggetto
+sex_col <- names(d)[tolower(names(d)) %in% c("female","sex","gender","sesso")][1]
+if (length(sex_col)==1) {
+  sx <- tolower(as.character(d[[sex_col]]))
+  d$female_row <- as.integer(sx %in% c("f","female","donna","femmina","woman","1","true"))
+} else {
+  d$female_row <- 1L
+}
+female_by_subj <- d %>% group_by(subj) %>%
+  summarise(female = as.integer(mean(female_row, na.rm=TRUE) >= .5), .groups="drop")
+
+# Normalizza i nomi baseline PID-5
+d <- d %>%
+  dplyr::rename(
+    pid5_negative_affect_baseline = dplyr::any_of(c(
+      "domain_negative_affect_baseline", "pid5_negative_affect_baseline"
+    )),
+    pid5_detachment_baseline = dplyr::any_of(c(
+      "domain_detachment_baseline", "pid5_detachment_baseline"
+    )),
+    pid5_antagonism_baseline = dplyr::any_of(c(
+      "domain_antagonism_baseline", "pid5_antagonism_baseline"
+    )),
+    pid5_disinhibition_baseline = dplyr::any_of(c(
+      "domain_disinhibition_baseline", "pid5_disinhibition_baseline"
+    )),
+    pid5_psychoticism_baseline = dplyr::any_of(c(
+      "domain_psychoticism_baseline", "pid5_psychoticism_baseline"
+    ))
+  )
+
+# Baseline PID-5 a livello soggetto (z tra soggetti)
+# 1) Baseline per soggetto (valori grezzi), poi z tra soggetti
+base_by_subj_raw <- d %>%
+  dplyr::group_by(subj) %>%
+  dplyr::summarise(
+    naff_b = first_non_na(pid5_negative_affect_baseline),
+    det_b  = first_non_na(pid5_detachment_baseline),
+    ant_b  = first_non_na(pid5_antagonism_baseline),
+    dis_b  = first_non_na(pid5_disinhibition_baseline),
+    psy_b  = first_non_na(pid5_psychoticism_baseline),
+    .groups = "drop"
+  )
+
+base_by_subj <- base_by_subj_raw %>%
+  dplyr::mutate(
+    z_naff_b = z_(naff_b),
+    z_det_b  = z_(det_b),
+    z_ant_b  = z_(ant_b),
+    z_dis_b  = z_(dis_b),
+    z_psy_b  = z_(psy_b)
+  ) %>%
+  dplyr::select(subj, z_naff_b, z_det_b, z_ant_b, z_dis_b, z_psy_b)
+
+# Controllo: le sd non devono essere ~0
+sapply(base_by_subj[,-1], sd)
+```
+
+## Filtro qualità
+
+Richiediamo almeno **3 PRE** e **3 POST** per soggetto (robusto ma onesto).
+
+```{r}
+#| label: quality-filter
+subj_counts <- d %>% count(subj, period) %>%
+  tidyr::pivot_wider(names_from = period, values_from = n, values_fill = 0)
+
+ok_subj <- subj_counts %>% mutate(ok = pre >= 2 & post >= 2) %>%
+  filter(ok) %>% pull(subj)
+
+d2 <- d %>% filter(subj %in% ok_subj)
+length(unique(d2$subj))  # controlla che torni a molte decine
+```
+
+# Outcome: variazione Δy (POST - PRE)
+
+```{r}
+#| label: build-delta
+y_pre_rob  <- d2 %>% filter(period=="pre") %>% group_by(subj) %>% summarise(y_pre = rob_mean(y), .groups="drop")
+y_post_rob <- d2 %>% filter(period=="post") %>% group_by(subj) %>% summarise(y_post = rob_mean(y), .groups="drop")
+
+df_delta <- y_pre_rob %>%
+  inner_join(y_post_rob, by="subj") %>%
+  mutate(
+    y_pre_z  = as.numeric(scale(y_pre)),
+    y_post_z = as.numeric(scale(y_post)),
+    dy       = y_post_z - y_pre_z
+  ) %>%
+  left_join(base_by_subj,   by="subj") %>%
+  left_join(female_by_subj, by="subj")
+```
+
+# EMA-PRE → **PC1**
+
+
+```{r}
+# --- Deviazioni EMA - baseline (robusto) ------------------------------------
+ema_names <- c("pid5_negative_affectivity","pid5_detachment","pid5_antagonism",
+               "pid5_disinhibition","pid5_psychoticism")
+ema_names <- intersect(ema_names, names(d2))
+
+base_map <- c(
+  pid5_negative_affectivity = "z_naff_b",
+  pid5_detachment           = "z_det_b",
+  pid5_antagonism           = "z_ant_b",
+  pid5_disinhibition        = "z_dis_b",
+  pid5_psychoticism         = "z_psy_b"
+)
+
+# 1) Media PRE per soggetto (robusta) delle EMA
+ema_pre_by_subj <- d2 %>%
+  dplyr::filter(period == "pre") %>%
+  dplyr::group_by(subj) %>%
+  dplyr::summarise(
+    dplyr::across(dplyr::all_of(ema_names), ~ rob_mean(suppressWarnings(as.numeric(.x)))),
+    .groups = "drop"
+  )
+
+# 2) Portiamo baseline (z_*) e female su stessa tabella soggetto
+# 2) Outcome Δy (POST - PRE, medie robuste)
+y_pre_rob  <- d2 %>% dplyr::filter(period=="pre")  %>% dplyr::group_by(subj) %>%
+  dplyr::summarise(y_pre = rob_mean(y),  .groups="drop")
+y_post_rob <- d2 %>% dplyr::filter(period=="post") %>% dplyr::group_by(subj) %>%
+  dplyr::summarise(y_post = rob_mean(y), .groups="drop")
+
+df_delta <- y_pre_rob %>%
+  dplyr::inner_join(y_post_rob, by="subj") %>%
+  dplyr::mutate(
+    y_pre_z  = as.numeric(scale(y_pre)),
+    y_post_z = as.numeric(scale(y_post)),
+    dy       = y_post_z - y_pre_z
+  ) %>%
+  dplyr::left_join(base_by_subj,   by="subj") %>%
+  dplyr::left_join(female_by_subj, by="subj")
+
+# Per comodità nei passi successivi:
+base_keep <- df_delta %>% dplyr::select(subj, z_naff_b, z_det_b, z_ant_b, z_dis_b, z_psy_b, female, dy)
+
+dev_df <- ema_pre_by_subj %>%
+  dplyr::inner_join(base_keep, by = "subj") # <-- allineamento soggetti!
+
+# 3) z + winsor sulle EMA PRE (tra soggetti) PRIMA della sottrazione
+for (nm in ema_names) {
+  if (nm %in% names(dev_df)) {
+    dev_df[[nm]] <- z_(winsor(dev_df[[nm]], c(.05, .95)))
+  }
+}
+
+# 4) Costruisci le deviazioni EMA - baseline (stato - tratto)
+for (nm in ema_names) {
+  zb <- base_map[[nm]]
+  if (!is.null(zb) && zb %in% names(dev_df) && nm %in% names(dev_df)) {
+    dev <- dev_df[[nm]] - dev_df[[zb]]
+    # pulizia: metti NA se non finito
+    dev[!is.finite(dev)] <- NA_real_
+    dev_df[[paste0("dev_", nm)]] <- dev
+  }
+}
+
+dev_cols <- grep("^dev_", names(dev_df), value = TRUE)
+
+# 5) Drop colonne con varianza ~0 o troppi NA; drop righe con tutte NA nelle dev
+if (length(dev_cols) == 0) stop("Nessuna colonna di deviazioni dev_* trovata.")
+# soglia: colonna accettata se ha almeno 10 soggetti non-NA (adatta se serve)
+keep_col <- vapply(dev_cols, function(cn) sum(is.finite(dev_df[[cn]])) >= 10, TRUE)
+dev_cols <- dev_cols[keep_col]
+if (length(dev_cols) == 0) stop("Deviazioni prive di sufficiente copertura non-NA.")
+
+# rimuovi righe con tutte dev NA
+row_keep <- apply(as.data.frame(dev_df[, dev_cols, drop = FALSE]), 1, function(r) any(is.finite(r)))
+dev_df2 <- dev_df[row_keep, , drop = FALSE]
+
+# rimuovi colonne con varianza ~0 (dopo il filtraggio righe)
+v <- apply(as.matrix(dev_df2[, dev_cols, drop = FALSE]), 2, function(x) var(x, na.rm = TRUE))
+dev_cols2 <- dev_cols[is.finite(v) & v > 1e-8]
+if (length(dev_cols2) == 0) stop("Varianza ~0 nelle deviazioni dopo il filtraggio.")
+
+# 6) Safe-PCA con fallback
+make_pc1_safe <- function(df, cols) {
+  M <- as.matrix(df[, cols, drop = FALSE])
+  # centra/scala colonna per colonna ignorando NA
+  Mcs <- scale(M, center = TRUE, scale = TRUE)
+  # elimina righe con NA (PCA non gestisce NA); mantieni tracciabilità dei soggetti
+  ok_row <- apply(Mcs, 1, function(r) all(is.finite(r)))
+  Mcs_ok <- Mcs[ok_row, , drop = FALSE]
+  subj_ok <- df$subj[ok_row]
+  if (nrow(Mcs_ok) < 3) return(NULL)  # troppo pochi per una PCA sensata
+
+  if (ncol(Mcs_ok) == 1) {
+    pc1 <- as.numeric(Mcs_ok[,1])
+  } else {
+    pr <- try(prcomp(Mcs_ok, center = FALSE, scale. = FALSE), silent = TRUE)
+    if (inherits(pr, "try-error")) return(NULL)
+    pc1 <- pr$x[,1]
+  }
+  tibble::tibble(subj = subj_ok, w_pc1_dev = z_(winsor(pc1, c(.05, .95))))
+}
+
+pc1_dev <- make_pc1_safe(dev_df2, dev_cols2)
+
+if (is.null(pc1_dev)) {
+  # Fallback: scegli la dev_* con miglior correlazione (assoluta) con dy
+  cor_abs <- vapply(dev_cols2, function(cn) {
+    suppressWarnings(abs(cor(dev_df2[[cn]], dev_df2$dy, use = "pairwise.complete.obs")))
+  }, 0.0)
+  best <- dev_cols2[which.max(cor_abs)]
+  message(sprintf("PCA non eseguibile: uso fallback univariato '%s'", best))
+  pc1_dev <- tibble::tibble(
+    subj = dev_df2$subj,
+    w_pc1_dev = z_(winsor(dev_df2[[best]], c(.05, .95)))
+  )
+}
+
+# 7) Merge e drop NA finali — NIENTE left_join(df_delta, dy)
+df_delta_dev <- base_keep %>%
+  dplyr::inner_join(pc1_dev, by = "subj") %>%
+  tidyr::drop_na(dy, z_naff_b, z_det_b, z_ant_b, z_dis_b, z_psy_b, female, w_pc1_dev)
+```
+
+```{r}
+# Quanti soggetti?
+n_distinct(df_delta_dev$subj)
+
+# Nessun NA nelle colonne chiave?
+sapply(df_delta_dev[, c("dy","z_naff_b","z_det_b","z_ant_b","z_dis_b","z_psy_b","female","w_pc1_dev")], function(x) sum(!is.finite(x)))
+
+# Varianze >0?
+sapply(df_delta_dev[, c("dy","w_pc1_dev")], var)
+```
+
+
+# Modelli **brms**
+
+- **Ridotto**: Δy ~ baseline + female  
+- **Completo**: Δy ~ baseline + female + PC1(EMA-PRE)
+
+Likelihood **Student-t** (robusta) + priors moderati.
+
+```{r}
+priors_common <- c(
+  set_prior("student_t(3, 0, 2.5)", class="Intercept"),
+  set_prior("normal(0, 0.5)", class="b"),     # baseline + female
+  set_prior("student_t(3, 0, 1)", class="sigma"),
+  set_prior("gamma(2, 0.1)", class="nu")
+)
+prior_dev <- set_prior("normal(0, 0.35)", class="b", coef="w_pc1_dev")
+
+form_red  <- bf(dy ~ z_naff_b + z_det_b + z_ant_b + z_dis_b + z_psy_b + female)
+form_full <- bf(dy ~ z_naff_b + z_det_b + z_ant_b + z_dis_b + z_psy_b + female + w_pc1_dev)
+
+fit_red  <- brm(form_red,  data=df_delta_dev, family=student(),
+                prior=priors_common, chains=4, iter=2000, warmup=1000, cores=4,
+                control=list(adapt_delta=.95), backend="cmdstanr",
+                seed=2101, save_pars=save_pars(all=TRUE))
+fit_full <- brm(form_full, data=df_delta_dev, family=student(),
+                prior=c(priors_common, prior_dev), chains=4, iter=2000, warmup=1000, cores=4,
+                control=list(adapt_delta=.95), backend="cmdstanr",
+                seed=2102, save_pars=save_pars(all=TRUE))
+
+```
+
+
+## PSIS-LOO (reference)
+
+```{r}
+fit_red  <- add_criterion(fit_red,  "loo", moment_match=TRUE)
+fit_full <- add_criterion(fit_full, "loo", moment_match=TRUE)
+loo_compare(fit_full, fit_red)
+```
+
+
+
+
+## 10-fold Cross-Validation
+
+Per campioni piccoli, il **K-fold (K=10)** tende a essere più stabile di PSIS-LOO.
+
+```{r}
+#| label: kfold
+set.seed(2025)
+kf_full <- kfold(fit_full, K=10, chains=2, cores=4)
+kf_red  <- kfold(fit_red,  K=10, chains=2, cores=4)
+cmp_kf  <- loo_compare(kf_full, kf_red)
+
+cmp_kf
+```
+
+### Tabella riassuntiva
+
+```{r}
+#| label: table-summary
+tab <- tibble::tibble(
+  Metrica = c("PSIS-LOO ΔELPD (Full-Reduced)", "PSIS-LOO SE", "K-fold ΔELPD (Full-Reduced)", "K-fold SE"),
+  Valore  = c(
+    as.numeric(cmp_loo[1,"elpd_diff"]),
+    as.numeric(cmp_loo[1,"se_diff"]),
+    as.numeric(cmp_kf[1,"elpd_diff"]),
+    as.numeric(cmp_kf[1,"se_diff"])
+  )
+)
+kable(tab, digits = 2, caption = "Confronto predittivo: modello completo vs ridotto.")
+```
+
+# Interpretazione didattica
+
+- **PC1(EMA-PRE)** cattura la componente **di stato/reattività** nel periodo precedente all'evento (esame).  
+- Usando **Δy** come outcome, la parte “stabile” di NA si cancella e resta la **variazione**: è più facile che l’informazione EMA risulti utile.  
+- **PSIS-LOO** e **K-fold (K=10)** mostrano la differenza in **ELPD**; idealmente vogliamo **ΔELPD/SE ≥ 2** per un messaggio “forte” in aula.
+
+# Varianti (facoltative)
+
+- Sostituire PC1 con **instabilità PRE** (*sd*) e **trend PRE** (*slope*) del dominio EMA più informativo (es. detachment).  
+- Aumentare il filtro qualità (≥4 PRE / ≥4 POST).  
+- Uso di **priors** leggermente più stretti su PC1 se si nota overfitting residuo.
+
+# Session info
+
+```{r}
+sessionInfo()
+```

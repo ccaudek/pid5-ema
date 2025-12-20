@@ -1,21 +1,21 @@
 Totale soggetti (raw): 556
-Esclusi step1 (careless + n_ema out of [5,40]): 51
-  - Careless: 25
-  - n_ema fuori [5,40]: 29
-Soggetti dopo step1: 505
-Esclusi step2 (quality rules): 276
-  - Copertura bassa (PRE<1 o POST<1): 273
-  - SD(NA)<0.30: 5
-  - Cifre tonde >0.80: 11
-Soggetti inclusi (finale): 229
+Esclusi step1 (careless + n_ema out of [5,40]): 13
+  - Careless: 0
+  - n_ema fuori [5,40]: 13
+Soggetti dopo step1: 543
+Esclusi step2 (quality rules): 304
+  - Copertura bassa (PRE<1 o POST<1): 301
+  - SD(NA)<0.30: 6
+  - Cifre tonde >0.80: 12
+Soggetti inclusi (finale): 239
 
 n_ema (included) — min: 14, q1: 25, median: 28, mean: 27.19, q3: 30, max: 37
 
 Distribuzione genere (soggetti unici):
- - Femmina: 192
+ - Femmina: 202
  - Maschio: 37
 
 Distribuzione exam_period (righe/beep):
- - baseline: 5379
- - pre_exam: 449
- - post_exam: 398
+ - baseline: 5614
+ - pre_exam: 467
+ - post_exam: 418

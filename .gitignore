@@ -6,6 +6,11 @@
 .RData
 .RDataTmp
 
+# File di R
+*.rds
+*.RData
+.RData
+
 # User-specific files
 .Ruserdata
 
