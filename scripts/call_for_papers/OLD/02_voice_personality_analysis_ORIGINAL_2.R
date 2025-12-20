@@ -11,25 +11,27 @@
 # ==============================================================================
 
 # Load required packages
-library(here)
-library(tidyverse)
-library(readxl)
-library(brms)
-library(cmdstanr)
-library(bayestestR)
-library(bayesplot)
-library(tidybayes)
-library(patchwork)
-library(ggdist)
-library(lubridate)
-library(stringr)
-library(missRanger)
+suppressPackageStartupMessages({
+  library(here)
+  library(tidyverse)
+  library(readxl)
+  library(brms)
+  library(cmdstanr)
+  library(bayestestR)
+  library(bayesplot)
+  library(tidybayes)
+  library(patchwork)
+  library(ggdist)
+  library(lubridate)
+  library(stringr)
+  library(missRanger)
+})
 
 # Set cmdstanr as backend for brms
 options(brms.backend = "cmdstanr")
 
 # Create output directories
-dir.create("models_original", showWarnings = FALSE)
+dir.create("models", showWarnings = FALSE)
 dir.create("figures", showWarnings = FALSE)
 dir.create("results", showWarnings = FALSE)
 
@@ -78,6 +80,8 @@ post$timepoint <- "post"
 
 # Combine all data
 df_wide <- bind_rows(baseline, pre, post)
+nrow(df_wide)
+# [1] 423
 
 # Clean column names (remove extra spaces)
 names(df_wide) <- str_trim(names(df_wide))
@@ -574,14 +578,14 @@ m1_f0mean_a <- brm(
   f0_mean_a ~ timepoint + (1 + timepoint | ID),
   data = df_analysis,
   family = gaussian(),
-  prior = priors_gaussian,
+  # prior = priors_gaussian,
   iter = 4000,
   warmup = 2000,
   chains = 4,
   cores = 4,
   seed = 123,
   control = list(adapt_delta = 0.99),
-  file = "models_original/m1_f0mean_a_main"
+  file = "models/m1_f0mean_a_main"
 )
 pp_check(m1_f0mean_a)
 summary(m1_f0mean_a)
@@ -594,14 +598,14 @@ m2_f0std_a <- brm(
   f0_std_a ~ timepoint + (1 + timepoint | ID),
   data = df_analysis,
   family = lognormal(),
-  prior = priors_lognormal,
+  # prior = priors_lognormal,
   iter = 4000,
   warmup = 2000,
   chains = 4,
   cores = 4,
   seed = 123,
   control = list(adapt_delta = 0.99),
-  file = "models_original/m2_f0std_a_main"
+  file = "models/m2_f0std_a_main"
 )
 pp_check(m2_f0std_a)
 summary(m2_f0std_a)
@@ -613,14 +617,14 @@ m3_jitter_a <- brm(
   jitter_a ~ timepoint + (1 + timepoint | ID),
   data = df_analysis,
   family = lognormal(),
-  prior = priors_lognormal,
+  # prior = priors_lognormal,
   iter = 4000,
   warmup = 2000,
   chains = 4,
   cores = 4,
   seed = 123,
   control = list(adapt_delta = 0.99),
-  file = "models_original/m3_jitter_a_main"
+  file = "models/m3_jitter_a_main"
 )
 pp_check(m3_jitter_a)
 summary(m3_jitter_a)
@@ -632,14 +636,14 @@ m4_nne_a <- brm(
   nne_a ~ timepoint + (1 + timepoint | ID),
   data = df_analysis,
   family = gaussian(),
-  prior = priors_gaussian,
+  # prior = priors_gaussian,
   iter = 4000,
   warmup = 2000,
   chains = 4,
   cores = 4,
   seed = 123,
   control = list(adapt_delta = 0.99),
-  file = "models_original/m4_nne_a_main"
+  file = "models/m4_nne_a_main"
 )
 pp_check(m4_nne_a)
 summary(m4_nne_a)
@@ -651,14 +655,14 @@ m5_f2mean_a <- brm(
   f2_mean_a ~ timepoint + (1 + timepoint | ID),
   data = df_analysis,
   family = student(),
-  prior = priors_gaussian, # prior structure similar to gaussian
+  # prior = priors_gaussian, # prior structure similar to gaussian
   iter = 4000,
   warmup = 2000,
   chains = 4,
   cores = 4,
   seed = 123,
   control = list(adapt_delta = 0.99),
-  file = "models_original/m5_f2mean_a_main"
+  file = "models/m5_f2mean_a_main"
 )
 pp_check(m5_f2mean_a)
 summary(m5_f2mean_a)
@@ -671,14 +675,14 @@ m6_f2std_a <- brm(
   f2_std_a ~ timepoint + (1 + timepoint | ID),
   data = df_analysis,
   family = lognormal(),
-  prior = priors_lognormal,
+  # prior = priors_lognormal,
   iter = 4000,
   warmup = 2000,
   chains = 4,
   cores = 4,
   seed = 123,
   control = list(adapt_delta = 0.99),
-  file = "models_original/m6_f2std_a_main"
+  file = "models/m6_f2std_a_main"
 )
 pp_check(m6_f2std_a)
 summary(m6_f2std_a)

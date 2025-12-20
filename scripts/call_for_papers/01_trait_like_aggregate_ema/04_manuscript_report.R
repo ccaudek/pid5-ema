@@ -1,14 +1,15 @@
 # ==============================================================================
 # Interpretive Report: Manuscript-Ready Summary
 # Context-Dependent Expression of Personality Pathology via Voice Acoustics
-# CORRECTED VERSION - Fixed model and parameter names
 # ==============================================================================
 
-library(tidyverse)
-library(brms)
-library(bayestestR)
-library(knitr)
-library(kableExtra)
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(brms)
+  library(bayestestR)
+  library(knitr)
+  library(kableExtra)
+})
 
 # ==============================================================================
 # LOAD DATA AND MODELS

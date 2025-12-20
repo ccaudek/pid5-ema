@@ -36,31 +36,31 @@ META_PATH <- here::here("data", "raw", "meta", "all_combined_sex_NEW_1.xlsx")
 
 # Tag esami per corsi (qui implementati come finestre pre/post fisse per corso)
 # Se hai un file esterno, puoi ignorare queste costanti e leggere EXAM_TAGS_PATH
-EXAM_TAGS_PATH <- here::here("data", "raw", "meta", "exam_periods.csv")
+# EXAM_TAGS_PATH <- here::here("data", "raw", "meta", "exam_periods.csv")
 
 # Output
 OUT_CLEAN_RDS <- here::here(
   "data",
   "processed",
-  "ema_plus_scales_cleaned_NO_PREPOST_FILTER.rds"
+  "ema_plus_scales_cleaned.rds"
 )
 
 OUT_CLEAN_CSV <- here::here(
   "data",
   "processed",
-  "ema_plus_scales_cleaned_NO_PREPOST_FILTER.csv"
+  "ema_plus_scales_cleaned.csv"
 )
 
 OUT_LOG_EXCL <- here::here(
   "data",
   "processed",
-  "ema_exclusion_log_NO_PREPOST_FILTER.csv"
+  "ema_exclusion_log.csv"
 )
 
 OUT_QA_TXT <- here::here(
   "data",
   "processed",
-  "ema_cleaning_QA_NO_PREPOST_FILTER.txt"
+  "ema_cleaning_QA.txt"
 )
 
 # ============================
@@ -194,7 +194,7 @@ dat_final <- dat_raw %>%
   dplyr::left_join(meta_df, by = "user_id") %>%
   dplyr::mutate(day = as.Date(day))
 
-# Finestre PRE/POST per corso (adatta se necessario)
+# Finestre PRE/POST per corso
 psico_pre <- as.Date(c("2025-04-14", "2025-05-21"))
 psico_post <- as.Date(c("2025-04-15", "2025-05-22"))
 test_pre <- as.Date(c("2025-04-14", "2025-05-25"))
@@ -380,12 +380,12 @@ excl_log <- bind_rows(excl_log_step1, excl_quality) %>%
   distinct(user_id, .keep_all = TRUE)
 
 keep_ids <- dat_step1 %>%
-  distinct(user_id) %>%
-  filter(!(user_id %in% excl_log$user_id)) %>%
+  dplyr::distinct(user_id) %>%
+  dplyr::filter(!(user_id %in% excl_log$user_id)) %>%
   pull(user_id)
 
 dat_clean <- dat_step1 %>%
-  filter(user_id %in% keep_ids)
+  dplyr::filter(user_id %in% keep_ids)
 
 # ============================
 # 8) QA ESSENZIALE
@@ -477,7 +477,7 @@ length(unique(dat2_clean$user_id))
 # ============================
 
 rio::export(dat2_clean, OUT_CLEAN_CSV)
-saveRDS(dat_clean, OUT_CLEAN_RDS)
+saveRDS(dat2_clean, OUT_CLEAN_RDS)
 
 excl_log %>%
   arrange(user_id) %>%
