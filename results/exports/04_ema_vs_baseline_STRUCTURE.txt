@@ -1,0 +1,12 @@
+======================================================================
+EMA VS BASELINE COMPARISON 
+======================================================================
+
+List structure:
+
+List of 4
+ $ descriptive_comparison: tibble [5 × 5] (S3: tbl_df/tbl/data.frame)
+ $ r2_comparison         : tibble [2 × 5] (S3: tbl_df/tbl/data.frame)
+ $ loo_f0                : NULL
+ $ loo_f2                : NULL
+NULL

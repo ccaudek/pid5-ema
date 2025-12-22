@@ -1,0 +1,31 @@
+======================================================================
+EMA VALIDATION CORRELATIONS 
+======================================================================
+
+Dimensions: 5 rows × 5 columns
+
+Column names:
+[1] "domain"   "ema_var"  "full_var" "r"        "n"       
+
+
+First 20 rows:
+----------------------------------------------------------------------
+# A tibble: 5 × 5
+  domain               ema_var                   full_var                            r     n
+  <chr>                <chr>                     <chr>                           <dbl> <int>
+1 Negative Affectivity pid5_negative_affectivity domain_negative_affect_baseline 0.502   110
+2 Detachment           pid5_detachment           domain_detachment_baseline      0.488   110
+3 Antagonism           pid5_antagonism           domain_antagonism_baseline      0.367   110
+4 Disinhibition        pid5_disinhibition        domain_disinhibition_baseline   0.554   110
+5 Psychoticism         pid5_psychoticism         domain_psychoticism_baseline    0.559   110
+
+
+Summary statistics:
+----------------------------------------------------------------------
+    domain            ema_var            full_var               r                n      
+ Length:5           Length:5           Length:5           Min.   :0.3667   Min.   :110  
+ Class :character   Class :character   Class :character   1st Qu.:0.4877   1st Qu.:110  
+ Mode  :character   Mode  :character   Mode  :character   Median :0.5019   Median :110  
+                                                          Mean   :0.4939   Mean   :110  
+                                                          3rd Qu.:0.5544   3rd Qu.:110  
+                                                          Max.   :0.5588   Max.   :110  

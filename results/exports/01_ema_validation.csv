@@ -1,0 +1,6 @@
+domain,ema_var,full_var,r,n
+Negative Affectivity,pid5_negative_affectivity,domain_negative_affect_baseline,0.501868167786325,110
+Detachment,pid5_detachment,domain_detachment_baseline,0.4876882468177177,110
+Antagonism,pid5_antagonism,domain_antagonism_baseline,0.36672381105122087,110
+Disinhibition,pid5_disinhibition,domain_disinhibition_baseline,0.5544282708938354,110
+Psychoticism,pid5_psychoticism,domain_psychoticism_baseline,0.5587715359764887,110
