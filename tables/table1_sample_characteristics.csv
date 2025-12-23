@@ -1,0 +1,23 @@
+Characteristic,Value
+N participants,141
+N observations (voice recordings),423
+"Age, M (SD)",NA (NA)
+"Sex, N (%) female",120 (100.0%)
+,
+"**PID-5 Dimensions (EMA), M (SD)**",
+  Negative Affectivity,4.51 (1.55)
+  Detachment,1.95 (1.58)
+  Antagonism,0.82 (1.13)
+  Disinhibition,2.44 (1.26)
+  Psychoticism,1.22 (1.40)
+,
+"**PID-5 Dimensions (Baseline), M (SD)**",
+  Negative Affectivity,24.2 (8.7)
+  Detachment,22.9 (6.6)
+  Antagonism,15.1 (6.3)
+  Disinhibition,20.6 (5.7)
+  Psychoticism,30.2 (12.3)
+,
+**EMA Compliance**,
+"  Total EMA assessments, M (SD)",27.0 (4.1)
+"  Completion rate, M (SD) %",87.1 (13.4)

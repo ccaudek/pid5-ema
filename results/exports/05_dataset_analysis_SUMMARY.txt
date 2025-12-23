@@ -29,35 +29,35 @@ Column names:
 First 20 rows:
 ----------------------------------------------------------------------
 # A tibble: 20 × 38
-   ID                   timepoint date       sex     domain_negative_affe…¹ domain_detachment_ba…²
-   <chr>                <fct>     <date>     <chr>                    <int>                  <int>
- 1 ad_pa_2006_01_27_630 baseline  2025-04-01 Femmina                     19                     21
- 2 ag_te_2004_05_26_499 baseline  2025-04-04 <NA>                        NA                     NA
- 3 al_bo_2002_07_25_563 baseline  2025-04-01 Femmina                     NA                     NA
- 4 al_ca_2001_02_11_269 baseline  2025-04-06 <NA>                        NA                     NA
- 5 al_lo_1999_09_19_127 baseline  2025-04-06 Femmina                     21                     31
- 6 al_mi_2004_04_28_724 baseline  2025-04-05 Femmina                      5                     12
- 7 al_mo_2005_10_03_273 baseline  2025-03-30 Femmina                     20                     21
- 8 al_pe_2001_04_20_079 baseline  2025-04-05 <NA>                        NA                     NA
- 9 al_sc_2000_09_09_522 baseline  2025-04-05 Femmina                     32                     31
-10 al_va_2004_12_16_206 baseline  2025-04-03 Femmina                     35                     27
-11 an_bo_1988_08_24_166 baseline  2025-04-02 <NA>                        NA                     NA
-12 am_or_2005_07_19_155 baseline  2025-04-05 Femmina                     34                     25
-13 an_ba_2001_12_27_169 baseline  2025-04-02 Femmina                     25                     24
-14 an_ca_2002_02_24_956 baseline  2025-04-03 Femmina                      7                     11
-15 an_pu_2004_12_28_073 baseline  2025-04-02 Femmina                     30                     21
-16 an_ra_2004_06_07_770 baseline  2025-04-05 Femmina                     24                     22
-17 ar_br_2001_08_21_449 baseline  2025-04-02 Femmina                     17                     23
-18 ar_se_2005_06_30_070 baseline  2025-04-04 Femmina                     36                     27
-19 as_gr_2000_07_17_648 baseline  2025-04-03 Femmina                     21                     26
-20 as_si_2005_04_26_447 baseline  2025-04-03 <NA>                        NA                     NA
-# ℹ abbreviated names: ¹​domain_negative_affect_baseline, ²​domain_detachment_baseline
-# ℹ 32 more variables: domain_antagonism_baseline <int>, domain_disinhibition_baseline <int>,
-#   domain_psychoticism_baseline <int>, n_ema_obs <int>, f0_mean_a <dbl>, f0_std_a <dbl>,
-#   jitter_a <dbl>, nne_a <dbl>, f2_mean_a <dbl>, f2_std_a <dbl>, f0_mean_i <dbl>,
-#   f0_std_i <dbl>, jitter_i <dbl>, nne_i <dbl>, f2_mean_i <dbl>, f2_std_i <dbl>,
-#   f0_mean_u <dbl>, f0_std_u <dbl>, jitter_u <dbl>, nne_u <dbl>, f2_mean_u <dbl>,
-#   f2_std_u <dbl>, pid5_negative_affectivity <dbl>, pid5_detachment <dbl>, …
+   ID                   timepoint date       sex     domain_negative_affec…¹
+   <chr>                <fct>     <date>     <chr>                     <int>
+ 1 ad_pa_2006_01_27_630 baseline  2025-04-01 Femmina                      19
+ 2 ag_te_2004_05_26_499 baseline  2025-04-04 <NA>                         NA
+ 3 al_bo_2002_07_25_563 baseline  2025-04-01 Femmina                      NA
+ 4 al_ca_2001_02_11_269 baseline  2025-04-06 <NA>                         NA
+ 5 al_lo_1999_09_19_127 baseline  2025-04-06 Femmina                      21
+ 6 al_mi_2004_04_28_724 baseline  2025-04-05 Femmina                       5
+ 7 al_mo_2005_10_03_273 baseline  2025-03-30 Femmina                      20
+ 8 al_pe_2001_04_20_079 baseline  2025-04-05 <NA>                         NA
+ 9 al_sc_2000_09_09_522 baseline  2025-04-05 Femmina                      32
+10 al_va_2004_12_16_206 baseline  2025-04-03 Femmina                      35
+11 an_bo_1988_08_24_166 baseline  2025-04-02 <NA>                         NA
+12 am_or_2005_07_19_155 baseline  2025-04-05 Femmina                      34
+13 an_ba_2001_12_27_169 baseline  2025-04-02 Femmina                      25
+14 an_ca_2002_02_24_956 baseline  2025-04-03 Femmina                       7
+15 an_pu_2004_12_28_073 baseline  2025-04-02 Femmina                      30
+16 an_ra_2004_06_07_770 baseline  2025-04-05 Femmina                      24
+17 ar_br_2001_08_21_449 baseline  2025-04-02 Femmina                      17
+18 ar_se_2005_06_30_070 baseline  2025-04-04 Femmina                      36
+19 as_gr_2000_07_17_648 baseline  2025-04-03 Femmina                      21
+20 as_si_2005_04_26_447 baseline  2025-04-03 <NA>                         NA
+# ℹ abbreviated name: ¹​domain_negative_affect_baseline
+# ℹ 33 more variables: domain_detachment_baseline <int>,
+#   domain_antagonism_baseline <int>, domain_disinhibition_baseline <int>,
+#   domain_psychoticism_baseline <int>, n_ema_obs <int>, f0_mean_a <dbl>,
+#   f0_std_a <dbl>, jitter_a <dbl>, nne_a <dbl>, f2_mean_a <dbl>,
+#   f2_std_a <dbl>, f0_mean_i <dbl>, f0_std_i <dbl>, jitter_i <dbl>,
+#   nne_i <dbl>, f2_mean_i <dbl>, f2_std_i <dbl>, f0_mean_u <dbl>, …
 
 
 Summary statistics:
@@ -70,67 +70,91 @@ Summary statistics:
                                    3rd Qu.:2025-04-15                     
                                    Max.   :2025-05-26                     
                                                                           
- domain_negative_affect_baseline domain_detachment_baseline domain_antagonism_baseline
- Min.   : 5.00                   Min.   : 8.00              Min.   : 3.00             
- 1st Qu.:17.00                   1st Qu.:18.00              1st Qu.:10.00             
- Median :24.00                   Median :22.00              Median :14.00             
- Mean   :24.19                   Mean   :22.91              Mean   :15.14             
- 3rd Qu.:31.00                   3rd Qu.:28.00              3rd Qu.:19.00             
- Max.   :44.00                   Max.   :38.00              Max.   :37.00             
- NA's   :93                      NA's   :93                 NA's   :93                
- domain_disinhibition_baseline domain_psychoticism_baseline   n_ema_obs       f0_mean_a    
- Min.   : 9.00                 Min.   : 9.00                Min.   :12.00   Min.   :123.0  
- 1st Qu.:16.00                 1st Qu.:19.00                1st Qu.:26.00   1st Qu.:177.1  
- Median :20.00                 Median :29.50                Median :28.00   Median :188.4  
- Mean   :20.63                 Mean   :30.21                Mean   :27.01   Mean   :189.3  
- 3rd Qu.:25.00                 3rd Qu.:39.00                3rd Qu.:30.00   3rd Qu.:201.1  
- Max.   :37.00                 Max.   :61.00                Max.   :31.00   Max.   :298.6  
- NA's   :93                    NA's   :93                   NA's   :63                     
-    f0_std_a         jitter_a          nne_a          f2_mean_a       f2_std_a     
- Min.   : 0.919   Min.   :0.1970   Min.   :-36.03   Min.   : 960   Min.   : 21.02  
- 1st Qu.: 2.686   1st Qu.:0.4295   1st Qu.:-27.78   1st Qu.:1102   1st Qu.: 41.02  
- Median : 4.150   Median :0.5620   Median :-24.53   Median :1164   Median : 55.27  
- Mean   : 6.346   Mean   :0.8547   Mean   :-24.49   Mean   :1204   Mean   : 60.32  
- 3rd Qu.: 7.091   3rd Qu.:0.8625   3rd Qu.:-21.51   3rd Qu.:1233   3rd Qu.: 70.47  
- Max.   :39.576   Max.   :8.5370   Max.   :-13.03   Max.   :2616   Max.   :227.26  
-                                                                                   
-   f0_mean_i        f0_std_i         jitter_i           nne_i          f2_mean_i   
- Min.   :122.5   Min.   : 1.315   Min.   : 0.1940   Min.   :-35.07   Min.   :1011  
- 1st Qu.:180.2   1st Qu.: 3.115   1st Qu.: 0.4405   1st Qu.:-29.65   1st Qu.:1921  
- Median :192.0   Median : 5.332   Median : 0.5790   Median :-28.38   Median :2292  
- Mean   :193.7   Mean   : 9.249   Mean   : 1.0678   Mean   :-27.77   Mean   :2165  
- 3rd Qu.:205.6   3rd Qu.:10.792   3rd Qu.: 0.9795   3rd Qu.:-26.40   3rd Qu.:2439  
- Max.   :299.4   Max.   :79.474   Max.   :13.9980   Max.   :-10.72   Max.   :2632  
-                                                                                   
-    f2_std_i        f0_mean_u        f0_std_u         jitter_u          nne_u        
- Min.   : 21.20   Min.   :122.9   Min.   : 1.190   Min.   : 0.216   Min.   :-34.353  
- 1st Qu.: 71.23   1st Qu.:179.8   1st Qu.: 2.967   1st Qu.: 0.426   1st Qu.:-30.441  
- Median :123.81   Median :192.5   Median : 5.205   Median : 0.574   Median :-29.126  
- Mean   :149.62   Mean   :194.3   Mean   : 9.443   Mean   : 1.209   Mean   :-28.355  
- 3rd Qu.:191.94   3rd Qu.:207.4   3rd Qu.:12.557   3rd Qu.: 1.021   3rd Qu.:-27.075  
- Max.   :799.58   Max.   :298.4   Max.   :77.149   Max.   :31.684   Max.   : -6.456  
-                                                                                     
-   f2_mean_u         f2_std_u       pid5_negative_affectivity pid5_detachment  pid5_antagonism  
- Min.   : 904.4   Min.   :  12.86   Min.   :0.7097            Min.   :0.0000   Min.   :0.00000  
- 1st Qu.:1011.6   1st Qu.:  42.90   1st Qu.:3.3004            1st Qu.:0.6154   1st Qu.:0.03448  
- Median :1060.9   Median :  69.53   Median :4.5862            Median :1.6471   Median :0.20690  
- Mean   :1127.5   Mean   : 143.52   Mean   :4.4948            Mean   :1.9662   Mean   :0.82710  
- 3rd Qu.:1142.1   3rd Qu.: 109.82   3rd Qu.:5.6087            3rd Qu.:3.1724   3rd Qu.:1.33333  
- Max.   :2582.5   Max.   :8077.00   Max.   :8.0769            Max.   :6.1923   Max.   :5.28571  
-                                                                                                
- pid5_disinhibition pid5_psychoticism pid5_negative_affectivity_c pid5_detachment_c
- Min.   :0.09524    Min.   :0.00000   Min.   :-2.3804             Min.   :-1.2374  
- 1st Qu.:1.52645    1st Qu.:0.06667   1st Qu.:-0.7511             1st Qu.:-0.8501  
- Median :2.39130    Median :0.61538   Median : 0.0575             Median :-0.2008  
- Mean   :2.44466    Mean   :1.24605   Mean   : 0.0000             Mean   : 0.0000  
- 3rd Qu.:3.42581    3rd Qu.:1.95652   3rd Qu.: 0.7005             3rd Qu.: 0.7592  
- Max.   :5.80000    Max.   :5.73077   Max.   : 2.2528             Max.   : 2.6598  
-                                                                                   
- pid5_antagonism_c pid5_disinhibition_c pid5_psychoticism_c
- Min.   :-0.7312   Min.   :-1.84901     Min.   :-0.8705    
- 1st Qu.:-0.7007   1st Qu.:-0.72263     1st Qu.:-0.8240    
- Median :-0.5483   Median :-0.04199     Median :-0.4406    
- Mean   : 0.0000   Mean   : 0.00000     Mean   : 0.0000    
- 3rd Qu.: 0.4475   3rd Qu.: 0.77217     3rd Qu.: 0.4964    
- Max.   : 3.9417   Max.   : 2.64067     Max.   : 3.1332    
-                                                           
+ domain_negative_affect_baseline domain_detachment_baseline
+ Min.   : 5.00                   Min.   : 8.00             
+ 1st Qu.:17.00                   1st Qu.:18.00             
+ Median :24.00                   Median :22.00             
+ Mean   :24.19                   Mean   :22.91             
+ 3rd Qu.:31.00                   3rd Qu.:28.00             
+ Max.   :44.00                   Max.   :38.00             
+ NA's   :93                      NA's   :93                
+ domain_antagonism_baseline domain_disinhibition_baseline
+ Min.   : 3.00              Min.   : 9.00                
+ 1st Qu.:10.00              1st Qu.:16.00                
+ Median :14.00              Median :20.00                
+ Mean   :15.14              Mean   :20.63                
+ 3rd Qu.:19.00              3rd Qu.:25.00                
+ Max.   :37.00              Max.   :37.00                
+ NA's   :93                 NA's   :93                   
+ domain_psychoticism_baseline   n_ema_obs       f0_mean_a    
+ Min.   : 9.00                Min.   :12.00   Min.   :123.0  
+ 1st Qu.:19.00                1st Qu.:26.00   1st Qu.:177.1  
+ Median :29.50                Median :28.00   Median :188.4  
+ Mean   :30.21                Mean   :27.01   Mean   :189.3  
+ 3rd Qu.:39.00                3rd Qu.:30.00   3rd Qu.:201.1  
+ Max.   :61.00                Max.   :31.00   Max.   :298.6  
+ NA's   :93                   NA's   :63                     
+    f0_std_a         jitter_a          nne_a          f2_mean_a   
+ Min.   : 0.919   Min.   :0.1970   Min.   :-36.03   Min.   : 960  
+ 1st Qu.: 2.686   1st Qu.:0.4295   1st Qu.:-27.78   1st Qu.:1102  
+ Median : 4.150   Median :0.5620   Median :-24.53   Median :1164  
+ Mean   : 6.346   Mean   :0.8547   Mean   :-24.49   Mean   :1204  
+ 3rd Qu.: 7.091   3rd Qu.:0.8625   3rd Qu.:-21.51   3rd Qu.:1233  
+ Max.   :39.576   Max.   :8.5370   Max.   :-13.03   Max.   :2616  
+                                                                  
+    f2_std_a        f0_mean_i        f0_std_i         jitter_i      
+ Min.   : 21.02   Min.   :122.5   Min.   : 1.315   Min.   : 0.1940  
+ 1st Qu.: 41.02   1st Qu.:180.2   1st Qu.: 3.115   1st Qu.: 0.4405  
+ Median : 55.27   Median :192.0   Median : 5.332   Median : 0.5790  
+ Mean   : 60.32   Mean   :193.7   Mean   : 9.249   Mean   : 1.0678  
+ 3rd Qu.: 70.47   3rd Qu.:205.6   3rd Qu.:10.792   3rd Qu.: 0.9795  
+ Max.   :227.26   Max.   :299.4   Max.   :79.474   Max.   :13.9980  
+                                                                    
+     nne_i          f2_mean_i       f2_std_i        f0_mean_u    
+ Min.   :-35.07   Min.   :1011   Min.   : 21.20   Min.   :122.9  
+ 1st Qu.:-29.65   1st Qu.:1921   1st Qu.: 71.23   1st Qu.:179.8  
+ Median :-28.38   Median :2292   Median :123.81   Median :192.5  
+ Mean   :-27.77   Mean   :2165   Mean   :149.62   Mean   :194.3  
+ 3rd Qu.:-26.40   3rd Qu.:2439   3rd Qu.:191.94   3rd Qu.:207.4  
+ Max.   :-10.72   Max.   :2632   Max.   :799.58   Max.   :298.4  
+                                                                 
+    f0_std_u         jitter_u          nne_u           f2_mean_u     
+ Min.   : 1.190   Min.   : 0.216   Min.   :-34.353   Min.   : 904.4  
+ 1st Qu.: 2.967   1st Qu.: 0.426   1st Qu.:-30.441   1st Qu.:1011.6  
+ Median : 5.205   Median : 0.574   Median :-29.126   Median :1060.9  
+ Mean   : 9.443   Mean   : 1.209   Mean   :-28.355   Mean   :1127.5  
+ 3rd Qu.:12.557   3rd Qu.: 1.021   3rd Qu.:-27.075   3rd Qu.:1142.1  
+ Max.   :77.149   Max.   :31.684   Max.   : -6.456   Max.   :2582.5  
+                                                                     
+    f2_std_u       pid5_negative_affectivity pid5_detachment 
+ Min.   :  12.86   Min.   :0.7097            Min.   :0.0000  
+ 1st Qu.:  42.90   1st Qu.:3.3004            1st Qu.:0.6154  
+ Median :  69.53   Median :4.5862            Median :1.6471  
+ Mean   : 143.52   Mean   :4.4948            Mean   :1.9662  
+ 3rd Qu.: 109.82   3rd Qu.:5.6087            3rd Qu.:3.1724  
+ Max.   :8077.00   Max.   :8.0769            Max.   :6.1923  
+                                                             
+ pid5_antagonism   pid5_disinhibition pid5_psychoticism
+ Min.   :0.00000   Min.   :0.09524    Min.   :0.00000  
+ 1st Qu.:0.03448   1st Qu.:1.52645    1st Qu.:0.06667  
+ Median :0.20690   Median :2.39130    Median :0.61538  
+ Mean   :0.82710   Mean   :2.44466    Mean   :1.24605  
+ 3rd Qu.:1.33333   3rd Qu.:3.42581    3rd Qu.:1.95652  
+ Max.   :5.28571   Max.   :5.80000    Max.   :5.73077  
+                                                       
+ pid5_negative_affectivity_c pid5_detachment_c pid5_antagonism_c
+ Min.   :-2.3804             Min.   :-1.2374   Min.   :-0.7312  
+ 1st Qu.:-0.7511             1st Qu.:-0.8501   1st Qu.:-0.7007  
+ Median : 0.0575             Median :-0.2008   Median :-0.5483  
+ Mean   : 0.0000             Mean   : 0.0000   Mean   : 0.0000  
+ 3rd Qu.: 0.7005             3rd Qu.: 0.7592   3rd Qu.: 0.4475  
+ Max.   : 2.2528             Max.   : 2.6598   Max.   : 3.9417  
+                                                                
+ pid5_disinhibition_c pid5_psychoticism_c
+ Min.   :-1.84901     Min.   :-0.8705    
+ 1st Qu.:-0.72263     1st Qu.:-0.8240    
+ Median :-0.04199     Median :-0.4406    
+ Mean   : 0.00000     Mean   : 0.0000    
+ 3rd Qu.: 0.77217     3rd Qu.: 0.4964    
+ Max.   : 2.64067     Max.   : 3.1332    
+                                         

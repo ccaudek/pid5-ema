@@ -132,41 +132,34 @@ build_formula <- function(outcome, family_spec = gaussian()) {
 # Weakly informative priors
 # More conservative for within-person effects (less data per person)
 
-get_priors_bw <- function(
-  outcome,
-  is_lognormal = FALSE,
-  has_cor = FALSE,
-  data = df_analysis
-) {
-  # prendi la y giusta (se lognormal userai outcome_pos fuori, qui teniamo outcome)
-  y <- data[[outcome]]
-  y <- as.numeric(y)
-  y_ok <- y[is.finite(y)]
-  y_mu <- mean(y_ok, na.rm = TRUE)
-  y_sd <- sd(y_ok, na.rm = TRUE)
-  if (!is.finite(y_sd) || y_sd == 0) y_sd <- 1
-  if (!is.finite(y_mu)) y_mu <- 0
+# Function to get appropriate priors
+get_priors_bw <- function(outcome_var, is_lognormal = FALSE) {
+  # Get outcome statistics for informative priors
+  y_mu <- mean(df_complete[[outcome_var]], na.rm = TRUE)
+  y_sd <- sd(df_complete[[outcome_var]], na.rm = TRUE)
 
-  # prior "puliti"
-  pri <- c(
-    prior(normal(0, if (is_lognormal) 1 else 10), class = "b"),
-    prior(
-      student_t(
-        3,
-        if (is_lognormal) log(max(y_mu, 1e-6)) else y_mu,
-        if (is_lognormal) 1 else 2.5 * y_sd
-      ),
-      class = "Intercept"
-    ),
-    prior(exponential(1), class = "sigma")
-  )
-
-  # LKJ solo se stimi correlazioni dei random effects (|), NON con ||
-  if (has_cor) {
-    pri <- c(pri, prior(lkj(2), class = "cor"))
+  # CRITICAL: Evaluate conditional expressions in R, not Stan
+  if (is_lognormal) {
+    b_prior <- "normal(0, 1)"
+    intercept_location <- log(max(y_mu, 1e-06))
+    intercept_scale <- 1
+  } else {
+    b_prior <- "normal(0, 10)"
+    intercept_location <- y_mu
+    intercept_scale <- 2.5 * y_sd
   }
 
-  pri
+  # Build priors with evaluated values
+  priors <- c(
+    prior_string(b_prior, class = "b"),
+    prior_string(
+      paste0("student_t(3, ", intercept_location, ", ", intercept_scale, ")"),
+      class = "Intercept"
+    ),
+    prior_string("exponential(1)", class = "sigma")
+  )
+
+  return(priors)
 }
 
 # ==============================================================================
@@ -430,21 +423,44 @@ cat(rep("=", 70), "\n")
 cat("DECISION CRITERIA: Include in main manuscript?\n")
 cat(rep("=", 70), "\n\n")
 
+# Count credible effects (handle NA values)
 n_within_effects <- sum(
   comparison_results$within_main_credible,
   comparison_results$within_stress_credible,
-  comparison_results$within_recovery_credible
+  comparison_results$within_recovery_credible,
+  na.rm = TRUE
 )
 
 n_between_effects <- sum(
   comparison_results$between_main_credible,
   comparison_results$between_stress_credible,
-  comparison_results$between_recovery_credible
+  comparison_results$between_recovery_credible,
+  na.rm = TRUE
 )
 
 cat("Summary:\n")
 cat("  Between-person effects:", n_between_effects, "\n")
 cat("  Within-person effects:", n_within_effects, "\n\n")
+
+# Check for NA values in credibility indicators
+n_na_between <- sum(is.na(c(
+  comparison_results$between_main_credible,
+  comparison_results$between_stress_credible,
+  comparison_results$between_recovery_credible
+)))
+
+n_na_within <- sum(is.na(c(
+  comparison_results$within_main_credible,
+  comparison_results$within_stress_credible,
+  comparison_results$within_recovery_credible
+)))
+
+if (n_na_between > 0 | n_na_within > 0) {
+  cat("⚠ WARNING: Some credibility indicators are NA\n")
+  cat("  Between-person NA:", n_na_between, "\n")
+  cat("  Within-person NA:", n_na_within, "\n")
+  cat("  Check comparison_results for details\n\n")
+}
 
 if (n_within_effects >= 2) {
   cat("RECOMMENDATION: Include in main manuscript\n")
@@ -461,6 +477,27 @@ if (n_within_effects >= 2) {
     "Rationale: No credible within-person effects - trait-only model sufficient.\n\n"
   )
 }
+
+# Compare for all domains
+comparison_results <- map_df(
+  pid5_domains,
+  ~ compare_between_within(posterior, .x)
+)
+
+# DEBUG: Check for NA values
+cat("\n=== DIAGNOSTIC: Checking for NA values ===\n")
+na_summary <- comparison_results %>%
+  summarise(across(everything(), ~ sum(is.na(.))))
+cat("NA counts per column:\n")
+print(t(na_summary))
+cat("\n")
+
+cat("Between-person (trait) vs Within-person (state) effects:\n\n")
+print(
+  comparison_results %>%
+    select(domain, ends_with("_mean"), ends_with("_credible")),
+  n = Inf
+)
 
 # ==============================================================================
 # 9. SAVE OUTPUT

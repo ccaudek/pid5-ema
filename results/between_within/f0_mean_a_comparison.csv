@@ -1,0 +1,6 @@
+domain,between_main_mean,between_main_ci_lower,between_main_ci_upper,within_main_mean,within_main_ci_lower,within_main_ci_upper,between_stress_mean,between_stress_ci_lower,between_stress_ci_upper,within_stress_mean,within_stress_ci_lower,within_stress_ci_upper,between_recovery_mean,between_recovery_ci_lower,between_recovery_ci_upper,within_recovery_mean,within_recovery_ci_lower,within_recovery_ci_upper,between_main_credible,within_main_credible,between_stress_credible,within_stress_credible,between_recovery_credible,within_recovery_credible
+negative_affectivity,0.238528165616195,-2.2182657575,2.74386461,0.454890614820447,-0.660508477,1.605600185,,,,,,,,,,,,,FALSE,FALSE,,,,
+detachment,0.978422266362785,-1.6531053,3.59313853,-0.160290484328705,-1.43992098,1.1239945775,,,,,,,,,,,,,FALSE,FALSE,,,,
+antagonism,0.047607128604489,-3.55893489,3.72729142,-0.452707990480542,-2.109706425,1.18645776,,,,,,,,,,,,,FALSE,FALSE,,,,
+disinhibition,-2.68016998432705,-6.2647413225,0.951055831,-0.417969937274797,-1.7349744975,0.895350654249999,,,,,,,,,,,,,FALSE,FALSE,,,,
+psychoticism,3.8877763354287,1.0721326225,6.7199814975,0.272313691536236,-1.33335694,1.8544238275,,,,,,,,,,,,,TRUE,FALSE,,,,

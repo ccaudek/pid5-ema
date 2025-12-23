@@ -1,0 +1,25 @@
+MODEL COMPARISON REPORT: Trait-Only vs Trait+State
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+
+Generated: 2025-12-22 19:54:54.77803 
+
+BAYESIAN R²
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Trait-only: 0.645 [0.073, 0.876]
+Trait+State: 0.642 [0.079, 0.886]
+Difference: -0.003 [-0.020, 0.011]
+P(Trait+State better): 0.500
+Conclusion: inconclusive
+
+LOO-IC COMPARISON
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Not available (different sample sizes)
+
+WITHIN-PERSON EFFECTS
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Credible within-person effects: 0
+Credible between-person effects: 1
+
+RECOMMENDATION
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+supplementary_brief 

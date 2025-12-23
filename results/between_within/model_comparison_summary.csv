@@ -1,0 +1,14 @@
+metric,value,ci_lower,ci_upper,interpretation
+R2_trait,0.645015128137301,0.0729192380019514,0.876456318422124,Trait-only variance explained
+R2_trait_state,0.642368808307422,0.0785091475002822,0.886367987986622,Trait+State variance explained
+R2_diff,-0.00264631982987863,-0.0197798536829622,0.0111738167705189,Improvement from adding state
+P_trait_state_better,0.5,,,Probability Trait+State better
+LOO_trait,,,,Trait-only predictive accuracy
+LOO_trait_state,,,,Trait+State predictive accuracy
+ELPD_diff,,,,Difference in expected log predictive density
+SE_diff,,,,Standard error of difference
+p_loo_trait,,,,Effective parameters trait-only
+p_loo_trait_state,,,,Effective parameters trait+state
+n_within_effects,0,,,Number of credible within-person effects
+n_between_effects,1,,,Number of credible between-person effects
+decision,,,,supplementary_brief

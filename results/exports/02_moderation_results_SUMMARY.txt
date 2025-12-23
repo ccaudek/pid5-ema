@@ -5,50 +5,58 @@ MODERATION ANALYSIS RESULTS
 Dimensions: 324 rows × 10 columns
 
 Column names:
- [1] "model"       "outcome"     "vowel"       "parameter"   "type"        "estimate"   
- [7] "se"          "ci_lower"    "ci_upper"    "significant"
+ [1] "model"       "outcome"     "vowel"       "parameter"   "type"       
+ [6] "estimate"    "se"          "ci_lower"    "ci_upper"    "significant"
 
 
 First 20 rows:
 ----------------------------------------------------------------------
 # A tibble: 20 × 10
-   model       outcome vowel parameter          type  estimate    se ci_lower ci_upper significant
-   <chr>       <chr>   <chr> <chr>              <chr>    <dbl> <dbl>    <dbl>    <dbl> <lgl>      
- 1 m_f0_mean_a f0_mean a     c1_stress:pid5_an… Inte…  8.44e-1  1.54   -2.14     3.91  FALSE      
- 2 m_f0_mean_a f0_mean a     c1_stress:pid5_de… Inte… -1.09e+0  1.62   -4.26     2.09  FALSE      
- 3 m_f0_mean_a f0_mean a     c1_stress:pid5_di… Inte… -4.40e-1  1.79   -3.94     3.08  FALSE      
- 4 m_f0_mean_a f0_mean a     c1_stress:pid5_ne… Inte…  2.05e+0  1.59   -1.14     5.19  FALSE      
- 5 m_f0_mean_a f0_mean a     c1_stress:pid5_ps… Inte…  8.77e-2  1.69   -3.18     3.39  FALSE      
- 6 m_f0_mean_a f0_mean a     pid5_antagonism_c… Inte…  3.65e+0  1.56    0.559    6.64  TRUE       
- 7 m_f0_mean_a f0_mean a     pid5_detachment_c… Inte… -1.18e+0  1.61   -4.36     1.97  FALSE      
- 8 m_f0_mean_a f0_mean a     pid5_disinhibitio… Inte… -1.06e+0  1.80   -4.54     2.52  FALSE      
- 9 m_f0_mean_a f0_mean a     pid5_negative_aff… Inte… -4.56e-1  1.59   -3.54     2.66  FALSE      
-10 m_f0_mean_a f0_mean a     pid5_psychoticism… Inte… -8.07e-1  1.67   -4.05     2.47  FALSE      
-11 m_f0_mean_a f0_mean a     Intercept          Main   1.89e+2  1.76  186.     193.    TRUE       
-12 m_f0_mean_a f0_mean a     c1_stress          Main   3.36e+0  1.22    0.962    5.77  TRUE       
-13 m_f0_mean_a f0_mean a     c2_recovery        Main   8.92e-1  1.25   -1.56     3.35  FALSE      
-14 m_f0_mean_a f0_mean a     pid5_antagonism_c  Main  -2.36e+0  1.66   -5.65     0.875 FALSE      
-15 m_f0_mean_a f0_mean a     pid5_detachment_c  Main  -1.73e-2  1.81   -3.67     3.54  FALSE      
-16 m_f0_mean_a f0_mean a     pid5_disinhibitio… Main  -2.10e+0  1.92   -5.91     1.63  FALSE      
-17 m_f0_mean_a f0_mean a     pid5_negative_aff… Main  -3.59e-2  1.49   -2.99     2.90  FALSE      
-18 m_f0_mean_a f0_mean a     pid5_psychoticism… Main   7.27e+0  1.77    3.79    10.8   TRUE       
-19 m_f0_mean_i f0_mean i     c1_stress:pid5_an… Inte… -5.06e-3  1.84   -3.66     3.58  FALSE      
-20 m_f0_mean_i f0_mean i     c1_stress:pid5_de… Inte… -6.55e-1  1.96   -4.45     3.21  FALSE      
+   model      outcome vowel parameter type  estimate    se ci_lower ci_upper
+   <chr>      <chr>   <chr> <chr>     <chr>    <dbl> <dbl>    <dbl>    <dbl>
+ 1 m_f0_mean… f0_mean a     c1_stres… Inte…  8.44e-1  1.54   -2.14     3.91 
+ 2 m_f0_mean… f0_mean a     c1_stres… Inte… -1.09e+0  1.62   -4.26     2.09 
+ 3 m_f0_mean… f0_mean a     c1_stres… Inte… -4.40e-1  1.79   -3.94     3.08 
+ 4 m_f0_mean… f0_mean a     c1_stres… Inte…  2.05e+0  1.59   -1.14     5.19 
+ 5 m_f0_mean… f0_mean a     c1_stres… Inte…  8.77e-2  1.69   -3.18     3.39 
+ 6 m_f0_mean… f0_mean a     pid5_ant… Inte…  3.65e+0  1.56    0.559    6.64 
+ 7 m_f0_mean… f0_mean a     pid5_det… Inte… -1.18e+0  1.61   -4.36     1.97 
+ 8 m_f0_mean… f0_mean a     pid5_dis… Inte… -1.06e+0  1.80   -4.54     2.52 
+ 9 m_f0_mean… f0_mean a     pid5_neg… Inte… -4.56e-1  1.59   -3.54     2.66 
+10 m_f0_mean… f0_mean a     pid5_psy… Inte… -8.07e-1  1.67   -4.05     2.47 
+11 m_f0_mean… f0_mean a     Intercept Main   1.89e+2  1.76  186.     193.   
+12 m_f0_mean… f0_mean a     c1_stress Main   3.36e+0  1.22    0.962    5.77 
+13 m_f0_mean… f0_mean a     c2_recov… Main   8.92e-1  1.25   -1.56     3.35 
+14 m_f0_mean… f0_mean a     pid5_ant… Main  -2.36e+0  1.66   -5.65     0.875
+15 m_f0_mean… f0_mean a     pid5_det… Main  -1.73e-2  1.81   -3.67     3.54 
+16 m_f0_mean… f0_mean a     pid5_dis… Main  -2.10e+0  1.92   -5.91     1.63 
+17 m_f0_mean… f0_mean a     pid5_neg… Main  -3.59e-2  1.49   -2.99     2.90 
+18 m_f0_mean… f0_mean a     pid5_psy… Main   7.27e+0  1.77    3.79    10.8  
+19 m_f0_mean… f0_mean i     c1_stres… Inte… -5.06e-3  1.84   -3.66     3.58 
+20 m_f0_mean… f0_mean i     c1_stres… Inte… -6.55e-1  1.96   -4.45     3.21 
+# ℹ 1 more variable: significant <lgl>
 
 
 Summary statistics:
 ----------------------------------------------------------------------
-    model             outcome             vowel            parameter             type          
- Length:324         Length:324         Length:324         Length:324         Length:324        
- Class :character   Class :character   Class :character   Class :character   Class :character  
- Mode  :character   Mode  :character   Mode  :character   Mode  :character   Mode  :character  
-                                                                                               
-                                                                                               
-                                                                                               
-    estimate                se              ci_lower            ci_upper         significant    
- Min.   : -28.35300   Min.   : 0.02609   Min.   : -28.7782   Min.   : -27.9316   Mode :logical  
- 1st Qu.:  -0.26016   1st Qu.: 0.09500   1st Qu.:  -3.3102   1st Qu.:   0.1392   FALSE:283      
- Median :  -0.03469   Median : 0.18544   Median :  -0.3423   Median :   0.3709   TRUE :41       
- Mean   :  15.37570   Mean   : 1.69035   Mean   :  12.0456   Mean   :  18.6742                  
- 3rd Qu.:   0.10610   3rd Qu.: 1.78246   3rd Qu.:  -0.1492   3rd Qu.:   3.3893                  
- Max.   :2308.79655   Max.   :22.50160   Max.   :2259.4242   Max.   :2347.4509                  
+    model             outcome             vowel          
+ Length:324         Length:324         Length:324        
+ Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character  
+                                                         
+                                                         
+                                                         
+  parameter             type              estimate         
+ Length:324         Length:324         Min.   : -28.35300  
+ Class :character   Class :character   1st Qu.:  -0.26016  
+ Mode  :character   Mode  :character   Median :  -0.03469  
+                                       Mean   :  15.37570  
+                                       3rd Qu.:   0.10610  
+                                       Max.   :2308.79655  
+       se              ci_lower            ci_upper         significant    
+ Min.   : 0.02609   Min.   : -28.7782   Min.   : -27.9316   Mode :logical  
+ 1st Qu.: 0.09500   1st Qu.:  -3.3102   1st Qu.:   0.1392   FALSE:283      
+ Median : 0.18544   Median :  -0.3423   Median :   0.3709   TRUE :41       
+ Mean   : 1.69035   Mean   :  12.0456   Mean   :  18.6742                  
+ 3rd Qu.: 1.78246   3rd Qu.:  -0.1492   3rd Qu.:   3.3893                  
+ Max.   :22.50160   Max.   :2259.4242   Max.   :2347.4509                  
